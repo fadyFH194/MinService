@@ -16,26 +16,28 @@ function App() {
     sendTokenToBackend(response.credential);
   };
 
-  const sendTokenToBackend = (token) => {
-    fetch('http://localhost:5000/auth/google', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ token })
-    })
-    .then(res => res.json())
-    .then(data => {
-      // Handle the response from your backend
-      // For example, set the user state with the returned user information
-      console.log(data);
-      if (data.user) {
-        setUser(data.user);
+  const sendTokenToBackend = async (token) => {
+    try {
+      const response = await fetch('http://localhost:5000/auth/google', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ token })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(data);
+        if (data.user) {
+          setUser(data.user);
+        }
+      } else {
+        console.error("Error verifying ID token:", response.status);
       }
-    })
-    .catch(error => {
+    } catch (error) {
       console.error("Error verifying ID token:", error);
-    });
+    }
   };
 
   const handleSignOut = () => {
@@ -44,18 +46,28 @@ function App() {
 
   return (
     <div className="App">
-      {!user.name && <SignInButton onSignIn={handleCallbackResponse} />}
-      {user.name && (
-        <div>
-          {/* User Profile Display */}
-          <UserProfile user={user} />
-          
-          {/* Independent Sign Out Button */}
-          <SignOutButton onSignOut={handleSignOut} />
+      <header className="App-header">
+        <h1>MinService</h1>
+          <main className="App-main">
+          {!user.name && (
+            <SignInButton onSignIn={handleCallbackResponse} />
+          )}
+          </main>
+        {user.name && (
+          <div className="user-details">
+            <UserProfile user={user} />
+          </div>
+        )}
+        <div className="sign-out-container">
+          {user.name && <SignOutButton onSignOut={handleSignOut} />}
         </div>
-      )}
+      </header>
     </div>
   );
 }
 
 export default App;
+
+
+
+

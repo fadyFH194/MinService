@@ -26,16 +26,7 @@ def create_app():
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "mysecretkey")
 
     # Enable CORS for all domains on all routes
-    CORS(
-        app,
-        resources={
-            r"/api/*": {
-                "origins": "*",
-                "methods": ["GET", "POST", "PUT", "DELETE"],
-            }
-        },
-        supports_credentials=True,
-    )
+    CORS(app)
 
     app.register_blueprint(auth_bp, url_prefix="/auth")
 

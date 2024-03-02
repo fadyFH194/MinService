@@ -28,50 +28,44 @@ google = oauth.register(
 
 @auth_bp.route("/google/", methods=["POST"])
 def login():
-    return jsonify({"Are we ok": "Yes"})
-    print("Came here")
-    if str(request.method).lower()=='options':
-        print("we got options")
+    # Parse JSON from the incoming request
     data = request.get_json()
-    access_token = data.get("access_token")
 
-    google = oauth.create_client("google")
+    # Extract the necessary information from the JSON
+    user_id = data.get("sub")  # Use 'sub' as the user ID
+    given_name = data.get("given_name")
+    picture = data.get("picture")
 
-    resp = google.get("userinfo", token=access_token)
-    user_info = resp.json()
+    # Check if all required information is present
+    if not all([user_id, given_name, picture]):
+        return jsonify({"error": "Missing data in the provided JSON"}), 400
 
-    user_id = user_info["id"]
-    given_name = user_info["given_name"]
-    picture = user_info["picture"]
-
+    # Check if the user already exists in the database
     user = Users.query.filter_by(id=user_id).first()
-
     if not user:
-        user = Users(id=user_id)
+        # If the user doesn't exist, create a new user entry
+        user = Users(id=user_id, given_name=given_name, picture=picture)
         db.session.add(user)
         db.session.commit()
-        new_user = True
+        new_user = True  # Flag to indicate a new user has been created
     else:
-        new_user = False
+        new_user = False  # Existing user, no new user created
 
+    # Log in the user using Flask-Login
     login_user(user)
-    session["profile"] = resp.json()
 
-    return (
-        jsonify(
-            {
-                "user": {
-                    "id": user_id,
-                    "given_name": given_name,
-                    "picture": picture,
-                    "new_user": new_user,
-                    "role": user.role.name,
-                },
-                "message": "Login successful",
-            }
-        ),
-        200,
-    )
+    # Return the user information and a success message
+    return jsonify({
+        "user": {
+            "id": user_id,
+            "given_name": given_name,
+            "picture": picture,
+            "new_user": new_user,
+            # Ensure the user model has a 'role' attribute or handle it appropriately
+            "role": user.role.name if hasattr(user, 'role') else 'default_role'
+        },
+        "message": "Login successful"
+    }), 200
 
 
 @auth_bp.route("/auth/logout", methods=["POST"])

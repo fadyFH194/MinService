@@ -18,11 +18,14 @@ function App() {
 
   const sendTokenToBackend = async (token) => {
     try {
-      const response = await fetch('http://localhost:5000/auth/google', {
+      const response = await fetch('http://127.0.0.1:5100/auth/google/', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin':'http://127.0.0.1:3000',
+          "Not-a-header":"Not a header"
         },
+        mode: "cors",
         body: JSON.stringify({ token })
       });
 

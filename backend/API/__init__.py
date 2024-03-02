@@ -23,10 +23,11 @@ def create_app():
         "DATABASE_URL", "sqlite:///mydatabase.db"
     )
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config["CORS_SEND_WILDCARD"] = True
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "mysecretkey")
 
     # Enable CORS for all domains on all routes
-    CORS(app)
+    CORS(app, resources={r"/*": {"origins": "*"}})
 
     app.register_blueprint(auth_bp, url_prefix="/auth")
 

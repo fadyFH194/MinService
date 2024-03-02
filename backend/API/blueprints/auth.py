@@ -8,7 +8,7 @@ import os
 from flask_cors import CORS
 
 auth_bp = Blueprint("auth_bp", __name__)
-CORS(auth_bp, supports_credentials=True)
+CORS(auth_bp, supports_credentials=True, resources={r"/*": {"origins": "*"}})
 
 
 oauth = OAuth()
@@ -26,8 +26,12 @@ google = oauth.register(
 )
 
 
-@auth_bp.route("/auth/google", methods=["POST", "OPTIONS"])
+@auth_bp.route("/google/", methods=["POST"])
 def login():
+    return jsonify({"Are we ok": "Yes"})
+    print("Came here")
+    if str(request.method).lower()=='options':
+        print("we got options")
     data = request.get_json()
     access_token = data.get("access_token")
 

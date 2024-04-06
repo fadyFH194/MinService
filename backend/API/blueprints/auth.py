@@ -39,7 +39,7 @@ def login():
     user_id = user_info["id"]
     given_name = user_info["given_name"]
     picture = user_info["picture"]
-
+    #email = user_info["email"]
     user = Users.query.filter_by(id=user_id).first()
 
     if not user:

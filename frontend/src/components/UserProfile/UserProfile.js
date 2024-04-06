@@ -7,6 +7,7 @@ function UserProfile({ user, onSignOut }) {
         <div>
           <img src={user.picture} alt={`${user.name}'s profile`} />
           <h3>{user.name}</h3>
+          <h3>{user.name}</h3>
         </div>
       );
     }

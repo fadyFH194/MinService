@@ -1,50 +1,83 @@
-# __init__.py
-
 import os
 from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, make_response, jsonify
 from flask_cors import CORS
-from flask_sqlalchemy import SQLAlchemy
-from .blueprints.auth import auth_bp
+from flask_login import LoginManager
 
-# Load environment variables
+# Ensure your blueprint imports are correctF
+from .blueprints.auth import auth_bp, oauth
+from .blueprints.userdata import userdata_bp
+from .blueprints.admin import admin_bp
+from .models import Users, db
+from .populate_db import main
+import logging
+
 load_dotenv()
 
-# Initialize extensions
-db = SQLAlchemy()
+login_manager = LoginManager()
 
 
-def create_app():
-    """Create and configure an instance of the Flask application."""
+def create_app(test_config=None):
     app = Flask(__name__)
+    oauth.init_app(app)
+    login_manager.init_app(app)
 
-    # Set configuration from environment variables
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
-        "DATABASE_URL", "sqlite:///mydatabase.db"
+    logging.basicConfig(level=logging.DEBUG)
+    app.logger.setLevel(logging.DEBUG)
+    app.logger.debug(f"the db uri is {os.environ.get('DATABASE_URL')}")
+
+    # General CORS setup for the whole app
+    CORS(
+        app,
+        resources={
+            r"/api/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE"],}
+        },
+        supports_credentials=True,
     )
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "mysecretkey")
+    app.register_blueprint(auth_bp, url_prefix="/api")
+    app.register_blueprint(userdata_bp, url_prefix="/api")
+    app.register_blueprint(admin_bp, url_prefix="/api")
 
-    # Enable CORS for all domains on all routes
-    CORS(app)
+    # Configuration
+    app.config.from_mapping(
+        SQLALCHEMY_DATABASE_URI=os.environ.get("DATABASE_URL"),
+        SQLALCHEMY_TRACK_MODIFICATIONS=False,
+        SESSION_COOKIE_SAMESITE="None",
+        SESSION_COOKIE_SECURE=True,
+        SECRET_KEY=os.environ.get("SECRET_KEY"),
+    )
 
-    app.register_blueprint(auth_bp, url_prefix="/auth")
+    # Override config with test config if passed
+    if test_config:
+        app.config.update(test_config)
 
     # Initialize extensions
     db.init_app(app)
+    login_manager.init_app(app)
 
-    # Create database tables
     with app.app_context():
         db.create_all()
+        if not app.config.get("TESTING"):
+            main()
 
-    # Define a simple route to welcome users
     @app.route("/")
     def index():
         return "Welcome to the backend!"
 
+    @app.route("/<path:path>", methods=["OPTIONS"])
+    def handle_global_options(path):
+        return "", 200
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        return Users.query.get(user_id)
+
+    @app.route("/api/test", methods=["GET"])
+    def test():
+        try:
+            return jsonify("test")
+        except Exception as e:
+            app.logger.error(f"Unexpected error: {e}", exc_info=True)
+            return make_response(jsonify({"error": "Internal Server Error"}), 500)
+
     return app
-
-
-if __name__ == "__main__":
-    app = create_app()
-    app.run(debug=True, port=5000)

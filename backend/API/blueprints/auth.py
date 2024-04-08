@@ -1,5 +1,3 @@
-# auth.py
-
 from flask import Blueprint, request, jsonify, session
 from flask_login import login_user, login_required, logout_user
 from ..models import Users, db
@@ -9,7 +7,6 @@ from flask_cors import CORS
 
 auth_bp = Blueprint("auth_bp", __name__)
 CORS(auth_bp, supports_credentials=True)
-
 
 oauth = OAuth()
 
@@ -26,7 +23,7 @@ google = oauth.register(
 )
 
 
-@auth_bp.route("/auth/google", methods=["POST", "OPTIONS"])
+@auth_bp.route("/auth/google", methods=["POST"])
 def login():
     data = request.get_json()
     access_token = data.get("access_token")
@@ -39,7 +36,7 @@ def login():
     user_id = user_info["id"]
     given_name = user_info["given_name"]
     picture = user_info["picture"]
-    #email = user_info["email"]
+
     user = Users.query.filter_by(id=user_id).first()
 
     if not user:

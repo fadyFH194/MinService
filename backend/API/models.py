@@ -12,7 +12,7 @@ class Roles(db.Model):
 
 
 class NUsers(db.Model):
-    __tablename__ = 'nusers'  # Explicitly set the table name
+    __tablename__ = "nusers"  # Explicitly set the table name
     id = db.Column(db.String, primary_key=True)
     name = db.Column(db.String(100))
     about = db.Column(db.String(255))
@@ -20,12 +20,14 @@ class NUsers(db.Model):
     current_location = db.Column(db.String(100))
     skills = db.relationship("UserSkills", backref="nuser", lazy=True)
 
+
 class UserSkills(db.Model):
-    __tablename__ = 'user_skills'  # Explicitly set the table name
+    __tablename__ = "user_skills"  # Explicitly set the table name
     id = db.Column(db.Integer, primary_key=True)
     skill = db.Column(db.String(100))
-    nuser_id = db.Column(db.String, db.ForeignKey('nusers.id'), nullable=False)  # Ensure the FK points to 'nusers.id'
-
+    nuser_id = db.Column(
+        db.String, db.ForeignKey("nusers.id"), nullable=False
+    )  # Ensure the FK points to 'nusers.id'
 
 
 # User model

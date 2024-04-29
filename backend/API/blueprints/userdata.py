@@ -3,7 +3,15 @@ from flask_login import login_required, current_user
 from flask_cors import CORS
 from sqlalchemy.exc import SQLAlchemyError
 
-from ..models import db, Courses, UserCurrentCourses, UserCompletedCourses, Users, NUsers, UserSkills
+from ..models import (
+    db,
+    Courses,
+    UserCurrentCourses,
+    UserCompletedCourses,
+    Users,
+    NUsers,
+    UserSkills,
+)
 
 userdata_bp = Blueprint("userdata_bp", __name__)
 CORS(userdata_bp, supports_credentials=True)
@@ -54,8 +62,8 @@ def register_nuser():
         db.session.rollback()
         current_app.logger.error(f"Error in register_nuser: {e}")
         return jsonify({"error": str(e)}), 500
-    
-    
+
+
 @userdata_bp.route("/nusers-view", methods=["GET"])
 @login_required
 def get_nuser_data():
@@ -74,17 +82,20 @@ def get_nuser_data():
             "about": nuser.about,
             "class_batch": nuser.class_batch,
             "current_location": nuser.current_location,
-            "skills": [skill.skill for skill in nuser.skills]
+            "skills": [skill.skill for skill in nuser.skills],
         }
         return jsonify(nuser_data), 200
 
     except SQLAlchemyError as e:
-        current_app.logger.error(f"Database error in get_nuser_data: {e}", exc_info=True)
+        current_app.logger.error(
+            f"Database error in get_nuser_data: {e}", exc_info=True
+        )
         return jsonify({"error": "Database error"}), 500
     except Exception as e:
-        current_app.logger.error(f"Unexpected error in get_nuser_data: {e}", exc_info=True)
+        current_app.logger.error(
+            f"Unexpected error in get_nuser_data: {e}", exc_info=True
+        )
         return jsonify({"error": "An unexpected error occurred"}), 500
-
 
 
 @userdata_bp.route("/update-nuser", methods=["PUT"])
@@ -106,7 +117,9 @@ def update_nuser():
         new_skills = set(data.get("skills", []))
 
         # Remove old skills that are not in the new data
-        for user_skill in nuser.skills[:]:  # Copy to avoid modifying the list while iterating
+        for user_skill in nuser.skills[
+            :
+        ]:  # Copy to avoid modifying the list while iterating
             if user_skill.skill not in new_skills:
                 db.session.delete(user_skill)
 
@@ -124,7 +137,6 @@ def update_nuser():
         db.session.rollback()
         current_app.logger.error(f"Error in update_nuser: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
-
 
 
 @userdata_bp.route("/userdata", methods=["POST"])

@@ -6,6 +6,7 @@ import Typography from "@mui/material/Typography";
 import Avatar from "@mui/material/Avatar";
 import { useAuth } from "../../contexts/AuthProvider";
 import ViewUserProfile from "../ViewUserProfile/ViewUserProfile";
+import NViewUserProfile from "../ViewUserProfile/NViewUserProfile";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Tooltip from "@mui/material/Tooltip";
@@ -13,7 +14,8 @@ import { useNavigate } from "react-router-dom";
 
 function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
-  const [isViewProfileOpen, setIsViewProfileOpen] = useState(false);
+  const [isViewUserProfileOpen, setIsViewUserProfileOpen] = useState(false);
+  const [isNViewUserProfileOpen, setIsNViewUserProfileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
 
@@ -23,9 +25,6 @@ function Navbar() {
     }
   }, [isAuthenticated]);
 
-  const openViewProfile = () => {
-    setIsViewProfileOpen(true);
-  };
   const handleAvatarClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -34,14 +33,13 @@ function Navbar() {
     setAnchorEl(null);
   };
 
-  // Function to navigate to the main page
   const navigateToHome = () => {
     navigate("/");
   };
 
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="fixed"> {/* Fixed to the top of the screen */}
+      <AppBar position="fixed">
         <Toolbar
           sx={{
             display: "flex",
@@ -53,9 +51,9 @@ function Navbar() {
               display: "flex",
               alignItems: "center",
               gap: 2,
-              cursor: "pointer", // Add cursor pointer for better UX
+              cursor: "pointer",
             }}
-            onClick={navigateToHome} // Add click event to navigate to home
+            onClick={navigateToHome}
           >
             <Typography
               variant="h6"
@@ -66,7 +64,7 @@ function Navbar() {
             </Typography>
           </Box>
 
-          {isAuthenticated ? (
+          {isAuthenticated && (
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <Typography variant="subtitle1">{user.given_name}</Typography>
 
@@ -83,17 +81,22 @@ function Navbar() {
                 open={Boolean(anchorEl)}
                 onClose={handleMenuClose}
               >
-                <MenuItem onClick={openViewProfile}>View Profile</MenuItem>
+                <MenuItem onClick={() => {
+                  setIsViewUserProfileOpen(true);
+                  handleMenuClose();
+                }}>View Profile</MenuItem>
+                <MenuItem onClick={() => {
+                  setIsNViewUserProfileOpen(true);
+                  handleMenuClose();
+                }}>View N Profile</MenuItem>
                 <MenuItem onClick={logout}>Logout</MenuItem>
               </Menu>
             </Box>
-          ) : (
-            <Box></Box>
           )}
         </Toolbar>
       </AppBar>
 
-      {isViewProfileOpen && (
+      {isViewUserProfileOpen && (
         <div
           style={{
             position: "fixed",
@@ -109,7 +112,28 @@ function Navbar() {
           }}
         >
           <ViewUserProfile
-            closeViewProfile={() => setIsViewProfileOpen(false)}
+            closeViewProfile={() => setIsViewUserProfileOpen(false)}
+          />
+        </div>
+      )}
+
+      {isNViewUserProfileOpen && (
+        <div
+          style={{
+            position: "fixed",
+            top: "0",
+            left: "0",
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: "1000",
+          }}
+        >
+          <NViewUserProfile
+            closeViewProfile={() => setIsNViewUserProfileOpen(false)}
           />
         </div>
       )}

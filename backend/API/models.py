@@ -11,6 +11,23 @@ class Roles(db.Model):
     name = db.Column(db.String(50), unique=True, nullable=False)
 
 
+class NUsers(db.Model):
+    __tablename__ = 'nusers'  # Explicitly set the table name
+    id = db.Column(db.String, primary_key=True)
+    name = db.Column(db.String(100))
+    about = db.Column(db.String(255))
+    class_batch = db.Column(db.String(100))
+    current_location = db.Column(db.String(100))
+    skills = db.relationship("UserSkills", backref="nuser", lazy=True)
+
+class UserSkills(db.Model):
+    __tablename__ = 'user_skills'  # Explicitly set the table name
+    id = db.Column(db.Integer, primary_key=True)
+    skill = db.Column(db.String(100))
+    nuser_id = db.Column(db.String, db.ForeignKey('nusers.id'), nullable=False)  # Ensure the FK points to 'nusers.id'
+
+
+
 # User model
 class Users(db.Model, UserMixin):
     id = db.Column(db.String, primary_key=True)
@@ -56,7 +73,6 @@ class Courses(db.Model):
         backref=db.backref("prerequisite_for", lazy="dynamic"),
         lazy="dynamic",
     )
-    # TODO: Add a column for the professor's name ()
 
     def __repr__(self):
         return f"Course('{self.name}', '{self.code}')"

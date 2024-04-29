@@ -12,7 +12,7 @@ const AuthPage = () => {
     if (user.new_user === false){
       return <Navigate to="/" />;
     } else {
-      return <Navigate to="/userform" />;
+      return <Navigate to="/userform" />, <Navigate to="/nuserform" />;
     }
   };
 

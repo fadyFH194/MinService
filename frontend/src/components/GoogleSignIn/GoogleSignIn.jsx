@@ -10,7 +10,8 @@ function GoogleSignIn() {
 
   useEffect(() => {
     if (authenticated) {
-      navigate("/userform");
+      navigate("/userform"),
+      navigate("/nuserform");
     }
   }, [authenticated, navigate]);
 

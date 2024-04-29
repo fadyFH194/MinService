@@ -3,6 +3,7 @@ import AuthPage from "./views/AuthPage";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthProvider";
 import UserformPage from "./components/UserForm/UserForm";
+import NUserFormPage from "./components/UserForm/NUserForm";
 import ExchangePage from "./views/FeedPage";
 import AdminPage from "./views/AdminPage";
 import ApiProvider from "./contexts/ApiProvider";
@@ -46,6 +47,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <UserformPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/nuserform"
+                element={
+                  <ProtectedRoute>
+                    <NUserFormPage />
                   </ProtectedRoute>
                 }
               />

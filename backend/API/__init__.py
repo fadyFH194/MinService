@@ -27,7 +27,10 @@ def create_app(test_config=None):
     CORS(
         app,
         resources={
-            r"/api/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE"],}
+            r"/api/*": {
+                "origins": "*",
+                "methods": ["GET", "POST", "PUT", "DELETE"],
+            }
         },
         supports_credentials=True,
     )
@@ -65,6 +68,7 @@ def create_app(test_config=None):
     @login_manager.user_loader
     def load_user(user_id):
         return NUsers.query.get(user_id)
+
     @app.route("/api/test", methods=["GET"])
     def test():
         try:
@@ -72,4 +76,5 @@ def create_app(test_config=None):
         except Exception as e:
             app.logger.error(f"Unexpected error: {e}", exc_info=True)
             return make_response(jsonify({"error": "Internal Server Error"}), 500)
+
     return app

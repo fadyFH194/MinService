@@ -3,6 +3,7 @@ from flask_login import UserMixin
 
 db = SQLAlchemy()
 
+
 class Roles(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False)
@@ -22,9 +23,9 @@ class NUsers(db.Model, UserMixin):
     role = db.relationship("Roles", backref="nusers", lazy=True)
 
     def __init__(self, *args, **kwargs):
-        if 'role_id' not in kwargs:
-            user_role = Roles.query.filter_by(name='user').first()  # Fetch "user" role
-            kwargs['role_id'] = user_role.id  # Set the role_id to the user role
+        if "role_id" not in kwargs:
+            user_role = Roles.query.filter_by(name="user").first()  # Fetch "user" role
+            kwargs["role_id"] = user_role.id  # Set the role_id to the user role
         super(NUsers, self).__init__(*args, **kwargs)
 
 

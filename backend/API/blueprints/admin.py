@@ -1,6 +1,5 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify
 from flask_login import login_required, current_user
-from ..models import db, CoursesAvailableForPickup, Courses
 from flask_cors import CORS
 
 admin_bp = Blueprint("admin_bp", __name__)

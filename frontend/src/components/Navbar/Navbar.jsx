@@ -81,14 +81,14 @@ function Navbar() {
                 open={Boolean(anchorEl)}
                 onClose={handleMenuClose}
               >
-                <MenuItem onClick={() => {
+                {/* <MenuItem onClick={() => {
                   setIsViewUserProfileOpen(true);
                   handleMenuClose();
-                }}>View Profile</MenuItem>
+                }}>View Profile</MenuItem> */}
                 <MenuItem onClick={() => {
                   setIsNViewUserProfileOpen(true);
                   handleMenuClose();
-                }}>View N Profile</MenuItem>
+                }}>View Profile</MenuItem>
                 <MenuItem onClick={logout}>Logout</MenuItem>
               </Menu>
             </Box>

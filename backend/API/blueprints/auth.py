@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, session
 from flask_login import login_user, login_required, logout_user
-from ..models import Users, db
+from ..models import NUsers, db
 from authlib.integrations.flask_client import OAuth
 import os
 from flask_cors import CORS
@@ -37,10 +37,10 @@ def login():
     given_name = user_info["given_name"]
     picture = user_info["picture"]
 
-    user = Users.query.filter_by(id=user_id).first()
+    user = NUsers.query.filter_by(id=user_id).first()
 
     if not user:
-        user = Users(id=user_id)
+        user = NUsers(id=user_id)
         db.session.add(user)
         db.session.commit()
         new_user = True

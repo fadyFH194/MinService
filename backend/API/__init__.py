@@ -7,6 +7,7 @@ from flask_login import LoginManager
 from .blueprints.auth import auth_bp, oauth
 from .blueprints.userdata import userdata_bp
 from .blueprints.admin import admin_bp
+from .blueprints.posts import posts_bp
 from .models import NUsers, db
 from .populate_db import main
 import logging
@@ -37,6 +38,7 @@ def create_app(test_config=None):
     app.register_blueprint(auth_bp, url_prefix="/api")
     app.register_blueprint(userdata_bp, url_prefix="/api")
     app.register_blueprint(admin_bp, url_prefix="/api")
+    app.register_blueprint(posts_bp, url_prefix="/api")
 
     app.config.from_mapping(
         SQLALCHEMY_DATABASE_URI=os.environ.get("DATABASE_URL"),

@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
+from datetime import datetime
 
 db = SQLAlchemy()
 
@@ -34,6 +35,32 @@ class UserSkills(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     skill = db.Column(db.String(100))
     nuser_id = db.Column(db.String, db.ForeignKey("nusers.id"), nullable=False)
+
+
+class Post(db.Model):
+    __tablename__ = "posts"
+    id = db.Column(db.Integer, primary_key=True)
+    type = db.Column(db.String(50), nullable=False)
+    credits = db.Column(db.Integer, nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    likes = db.Column(db.Integer, default=0)
+    comments = db.relationship("Comment", backref="post", lazy=True)
+    author_id = db.Column(db.String, db.ForeignKey("nusers.id"), nullable=False)
+
+    # Add timestamp field
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationship with NUsers (author)
+    author = db.relationship("NUsers", backref="posts", lazy=True)
+
+
+class Comment(db.Model):
+    __tablename__ = "comments"
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text, nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey("posts.id"), nullable=False)
+    author_id = db.Column(db.String, db.ForeignKey("nusers.id"), nullable=False)
 
 
 # the InitializationFlag model

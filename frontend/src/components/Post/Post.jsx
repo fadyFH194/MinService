@@ -1,42 +1,55 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardActions, Typography, Avatar, Grid, IconButton, TextField, Button, Chip } from '@mui/material';
-import { deepPurple } from '@mui/material/colors';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { Card, CardContent, Typography, Avatar, IconButton, TextField, Button, Chip, Grid, CardActions } from '@mui/material';
 import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
 import StarIcon from '@mui/icons-material/Star';
+import { deepPurple } from '@mui/material/colors';
 
-const Post = () => {
+const Post = ({ postId }) => {
+  const [postData, setPostData] = useState(null);
   const [upvotes, setUpvotes] = useState(0);
   const [comments, setComments] = useState([]);
   const [commentInput, setCommentInput] = useState('');
 
-  // Add a serviceType property to your postData
-  const postData = {
-    title: 'Placeholder Title',
-    author: 'Author Name',
-    date: 'March 16, 2024',
-    content: 'This is a placeholder for post content. Actual post content will be fetched from an API.',
-    serviceType: 'online',
-    credits: 2
-  };
+  useEffect(() => {
+    axios.get(`http://127.0.0.1:7070/api/posts/${postId}`, { withCredentials: true })
+      .then((response) => {
+        const post = response.data;
+        setPostData(post);
+        setUpvotes(post.likes);
+        setComments(post.comments);
+      })
+      .catch(error => console.error('Error fetching post:', error));
+  }, [postId]);
 
   const handleUpvote = () => {
-    setUpvotes(prevUpvotes => prevUpvotes + 1);
+    axios.post(`http://127.0.0.1:7070/api/posts/${postId}/like`, {}, { withCredentials: true })
+      .then(() => {
+        setUpvotes(prevUpvotes => prevUpvotes + 1);
+      })
+      .catch(error => console.error('Error upvoting post:', error));
   };
 
   const handleCommentSubmit = () => {
     if (commentInput.trim()) {
-      setComments(prevComments => [...prevComments, commentInput]);
-      setCommentInput('');
+      axios.post(`http://127.0.0.1:7070/api/posts/${postId}/comments`, { content: commentInput }, { withCredentials: true })
+        .then((response) => {
+          setComments(prevComments => [...prevComments, response.data.comment]);
+          setCommentInput('');
+        })
+        .catch(error => console.error('Error posting comment:', error));
     }
   };
+
+  if (!postData) return <div>Loading...</div>;
 
   return (
     <Card
       sx={{
-        position: 'relative', // Needed to position the service type indicator
+        position: 'relative',
         maxWidth: 600,
         width: '100%',
-        margin: '20px 0',
+        margin: '20px auto',
         boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.1)',
         border: '1px solid rgba(0, 0, 0, 0.12)',
         borderRadius: '8px',
@@ -45,31 +58,31 @@ const Post = () => {
         }
       }}
     >
-      {/* Service Type Indicator */}
+      {/* Post Type Indicator */}
       <Chip
-        label={postData.serviceType.charAt(0).toUpperCase() + postData.serviceType.slice(1)}
-        color={postData.serviceType === 'online' ? 'primary' : 'secondary'}
+        label={postData.type.charAt(0).toUpperCase() + postData.type.slice(1)}
+        color="primary"
         size="small"
         sx={{
           position: 'absolute',
           top: 16,
-          right: 16, // Adjust this value to move the service chip to the left
-          zIndex: 1, // Make sure it's above other content
-        }}
-      />
-      {/* Credits Indicator */}
-      <Chip
-        icon={<StarIcon />} // Add the star icon here
-        label={`${postData.credits}`} // Display the number of credits
-        size="small"
-        sx={{
-          position: 'absolute',
-          top: 16,
-          right: 'calc(100% - 520px)', // Keep this chip to the right
+          right: 16,
           zIndex: 1,
         }}
       />
 
+      {/* Credits Indicator */}
+      <Chip
+        icon={<StarIcon />}
+        label={`${postData.credits}`}
+        size="small"
+        sx={{
+          position: 'absolute',
+          top: 16,
+          right: 110,
+          zIndex: 1,
+        }}
+      />
 
       <CardContent>
         <Grid container alignItems="center" spacing={2}>
@@ -78,22 +91,25 @@ const Post = () => {
           </Grid>
           <Grid item xs>
             <Typography variant="h5">{postData.title}</Typography>
-            <Typography variant="subtitle2">{`By ${postData.author} on ${postData.date}`}</Typography>
+            <Typography variant="subtitle2">{`By ${postData.author}`}</Typography>
+            <Typography variant="caption" color="textSecondary">
+              {postData.date} {/* Display the formatted timestamp */}
+            </Typography>
           </Grid>
         </Grid>
+
         <Typography variant="body1" sx={{ marginTop: 2 }}>
           {postData.content}
         </Typography>
       </CardContent>
+
       <CardActions disableSpacing>
         <IconButton onClick={handleUpvote} aria-label="upvote">
           <ThumbUpAltIcon />
           <Typography sx={{ marginLeft: '8px' }}>{upvotes}</Typography>
         </IconButton>
-        <IconButton aria-label="comment">
-          {/* The comment icon button can be used to toggle the display of comments or open a comment modal */}
-        </IconButton>
       </CardActions>
+
       <CardContent>
         <TextField
           fullWidth
@@ -106,9 +122,10 @@ const Post = () => {
         <Button variant="contained" onClick={handleCommentSubmit} disabled={!commentInput.trim()}>
           Post Comment
         </Button>
+
         {comments.map((comment, index) => (
           <Typography key={index} variant="body2" sx={{ marginTop: '16px' }}>
-            {comment}
+            {comment.content}
           </Typography>
         ))}
       </CardContent>

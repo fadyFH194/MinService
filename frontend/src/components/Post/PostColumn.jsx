@@ -1,34 +1,30 @@
-// PostColumn.jsx
-import React, { useState } from 'react';
-import Box from '@mui/material/Box';
-import PostForm from "./PostForm";
-import Post from "./Post"; 
-
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import Post from './Post';
+import PostForm from './PostForm';
+import { Box } from '@mui/material';
 
 const PostColumn = () => {
-  const [posts, setPosts] = useState([
-    { id: 1, title: 'Post Title 1', content: 'Post Content Placeholder 1' },
-    { id: 2, title: 'Post Title 2', content: 'Post Content Placeholder 2' },
-    // Add more posts as needed
-  ]);
+  const [posts, setPosts] = useState([]);
+
+  useEffect(() => {
+    axios.get('http://127.0.0.1:7070/api/posts', { withCredentials: true })
+      .then(response => {
+        const sortedPosts = response.data.sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort posts by date (newest first)
+        setPosts(sortedPosts);
+      })
+      .catch(error => console.error('Error fetching posts:', error));
+  }, []);
 
   const addNewPost = (newPost) => {
-    setPosts([ { ...newPost, id: Date.now() }, ...posts ]); // New post at the beginning
+    setPosts([newPost, ...posts]);
   };
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        width: '100%',
-        gap: 2,
-      }}
-    >
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <PostForm onAddPost={addNewPost} />
-      {posts.map((post) => (
-        <Post key={post.id} title={post.title} content={post.content} />
+      {posts.map(post => (
+        <Post key={post.id} postId={post.id} />
       ))}
     </Box>
   );

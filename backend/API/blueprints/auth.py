@@ -40,11 +40,20 @@ def login():
     user = NUsers.query.filter_by(id=user_id).first()
 
     if not user:
-        user = NUsers(id=user_id)
+        # If the user doesn't exist, create a new user and store the picture URL
+        user = NUsers(
+            id=user_id,
+            name=given_name,
+            picture=picture,  # Store the picture URL in the database
+        )
         db.session.add(user)
         db.session.commit()
         new_user = True
     else:
+        # If the user exists, update the picture URL and name if necessary
+        user.name = given_name
+        user.picture = picture  # Update the picture URL in case it has changed
+        db.session.commit()
         new_user = False
 
     login_user(user)

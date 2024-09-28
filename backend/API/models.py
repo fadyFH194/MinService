@@ -14,6 +14,7 @@ class NUsers(db.Model, UserMixin):
     __tablename__ = "nusers"
     id = db.Column(db.String, primary_key=True)
     name = db.Column(db.String(100))
+    picture = db.Column(db.String(255))  # Add this line to store the profile picture URL
     about = db.Column(db.String(255))
     class_batch = db.Column(db.String(100))
     current_location = db.Column(db.String(100))
@@ -57,6 +58,10 @@ class Comment(db.Model):
     content = db.Column(db.Text, nullable=False)
     post_id = db.Column(db.Integer, db.ForeignKey("posts.id"), nullable=False)
     author_id = db.Column(db.String, db.ForeignKey("nusers.id"), nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)  # Add timestamp field
+
+    # Relationship with NUsers (author)
+    author = db.relationship("NUsers", backref="comments", lazy=True)
 
 
 class PostLikes(db.Model):

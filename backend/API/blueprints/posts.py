@@ -48,14 +48,44 @@ def add_post():
 def add_comment(post_id):
     try:
         data = request.get_json()
-        new_comment = Comment(content=data["content"], post_id=post_id, author_id=current_user.id)
+        new_comment = Comment(
+            content=data["content"],
+            post_id=post_id,
+            author_id=current_user.id  # Associate comment with current user
+        )
         db.session.add(new_comment)
         db.session.commit()
 
         return jsonify({
             "success": "Comment added successfully",
-            "comment": {"content": new_comment.content}
+            "comment": {
+                "id": new_comment.id,
+                "content": new_comment.content,
+                "author": current_user.name,  # Return comment owner
+                "timestamp": new_comment.timestamp.strftime("%Y-%m-%d %H:%M:%S"),  # Return formatted timestamp
+                "author_id": current_user.id  # Include author ID for ownership checks
+            }
         }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+    
+    
+@posts_bp.route("/comments/<int:comment_id>/delete", methods=["DELETE"])
+@login_required
+def delete_comment(comment_id):
+    try:
+        comment = Comment.query.get(comment_id)
+        if not comment:
+            return jsonify({"error": "Comment not found"}), 404
+
+        # Only allow the comment's author to delete it
+        if comment.author_id != current_user.id:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        db.session.delete(comment)
+        db.session.commit()
+        return jsonify({"success": "Comment deleted"}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
@@ -109,8 +139,6 @@ def get_post(post_id):
     if not post:
         return jsonify({"error": "Post not found"}), 404
 
-    author_name = post.author.name if post.author else "Unknown"
-
     post_data = {
         "id": post.id,
         "type": post.type,
@@ -118,9 +146,19 @@ def get_post(post_id):
         "title": post.title,
         "content": post.content,
         "likes": post.likes,
-        "comments": [{"id": comment.id, "content": comment.content} for comment in post.comments],
-        "author": author_name,
-        "date": post.timestamp.strftime("%Y-%m-%d %H:%M:%S") if post.timestamp else "Unknown"
+        "author": post.author.name,
+        "author_picture": post.author.picture if post.author.picture else None,  # Author's picture
+        "date": post.timestamp.strftime("%Y-%m-%d %H:%M:%S") if post.timestamp else "Unknown",
+        "comments": [
+            {
+                "id": comment.id,
+                "content": comment.content,
+                "author": comment.author.name,
+                "author_picture": comment.author.picture if comment.author.picture else None,  # Comment author's picture from NUsers
+                "timestamp": comment.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                "author_id": comment.author_id
+            } for comment in post.comments
+        ]
     }
     return jsonify(post_data), 200
 

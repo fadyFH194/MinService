@@ -1,17 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Card, CardContent, Typography, Avatar, IconButton, TextField, Button, Chip, Grid, CardActions } from '@mui/material';
+import { Card, CardContent, Typography, Avatar, IconButton, TextField, Button, Chip, Grid, CardActions, Menu, MenuItem, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
 import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
 import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt'; // For unliked state
 import StarIcon from '@mui/icons-material/Star';
-import { deepPurple } from '@mui/material/colors';
+import MoreVertIcon from '@mui/icons-material/MoreVert'; // For the three vertical dots menu
+import { useAuth } from '../../contexts/AuthProvider'; // Assuming you have a context for auth
 
 const Post = ({ postId }) => {
+  const { user } = useAuth(); // Get the current user's information, including their picture and id
   const [postData, setPostData] = useState(null);
   const [upvotes, setUpvotes] = useState(0);  // To store the total upvotes
   const [hasLiked, setHasLiked] = useState(false); // Track whether the user has liked the post
   const [comments, setComments] = useState([]);
   const [commentInput, setCommentInput] = useState('');
+  const [anchorEl, setAnchorEl] = useState(null); // Anchor element for the menu
+  const [selectedComment, setSelectedComment] = useState(null); // Track selected comment for delete
+  const [dialogOpen, setDialogOpen] = useState(false); // Track dialog open state
 
   useEffect(() => {
     // Fetch post details
@@ -50,6 +55,42 @@ const Post = ({ postId }) => {
         })
         .catch(error => console.error('Error posting comment:', error));
     }
+  };
+
+  // Delete comment handler
+  const handleDeleteComment = () => {
+    if (selectedComment) {
+      axios.delete(`http://127.0.0.1:7070/api/comments/${selectedComment}/delete`, { withCredentials: true })
+        .then(() => {
+          // Remove the comment from the local state
+          setComments(prevComments => prevComments.filter(comment => comment.id !== selectedComment));
+          handleCloseDialog(); // Close the confirmation dialog
+        })
+        .catch(error => console.error('Error deleting comment:', error));
+    }
+  };
+
+  // Handle menu open
+  const handleOpenMenu = (event, commentId) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedComment(commentId); // Set the selected comment before opening the dialog
+  };
+
+  // Handle menu close
+  const handleCloseMenu = () => {
+    setAnchorEl(null);
+  };
+
+  // Handle dialog open
+  const handleOpenDialog = () => {
+    setDialogOpen(true);
+    handleCloseMenu(); // Close the menu when the dialog opens
+  };
+
+  // Handle dialog close
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setSelectedComment(null); // Reset the selected comment after closing the dialog
   };
 
   if (!postData) return <div>Loading...</div>;
@@ -98,7 +139,8 @@ const Post = ({ postId }) => {
       <CardContent>
         <Grid container alignItems="center" spacing={2}>
           <Grid item>
-            <Avatar sx={{ bgcolor: deepPurple[500] }}>{postData.author[0]}</Avatar>
+            {/* Show the post author's picture */}
+            <Avatar alt="Author's Picture" src={postData.author_picture} sx={{ width: 40, height: 40 }} />
           </Grid>
           <Grid item xs>
             <Typography variant="h5">{postData.title}</Typography>
@@ -135,11 +177,69 @@ const Post = ({ postId }) => {
         </Button>
 
         {comments.map((comment, index) => (
-          <Typography key={index} variant="body2" sx={{ marginTop: '16px' }}>
-            {comment.content}
-          </Typography>
+          <Grid container alignItems="center" key={index} sx={{ marginTop: '16px' }}>
+            <Grid item>
+              {/* Show the comment author's picture */}
+              <Avatar alt="Comment Author's Picture" src={comment.author_picture} sx={{ width: 30, height: 30 }} />
+            </Grid>
+            <Grid item xs sx={{ marginLeft: '10px' }}>
+              <Typography variant="body2">
+                <strong>{comment.author}</strong> {/* Bold author name */}
+                <Typography variant="caption" color="textSecondary" sx={{ marginLeft: '10px' }}>
+                  {comment.timestamp} {/* Timestamp in smaller font */}
+                </Typography>
+              </Typography>
+              <Typography variant="body1" sx={{ marginTop: '4px' }}>
+                {comment.content}
+              </Typography>
+            </Grid>
+
+            {/* Show menu with delete option if the current user is the author */}
+            {comment.author_id === user.id && ( // Use user.id from useAuth to compare with comment author
+              <Grid item>
+                <IconButton onClick={(e) => handleOpenMenu(e, comment.id)}>
+                  <MoreVertIcon />
+                </IconButton>
+                <Menu
+                  anchorEl={anchorEl}
+                  open={Boolean(anchorEl)}
+                  onClose={handleCloseMenu}
+                  keepMounted
+                >
+                  <MenuItem onClick={handleOpenDialog}>Delete</MenuItem>
+                </Menu>
+              </Grid>
+            )}
+          </Grid>
         ))}
       </CardContent>
+
+      {/* Confirmation dialog for deletion */}
+      <Dialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">{"Confirm Delete"}</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Are you sure you want to delete this comment?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteComment}  // Call delete function directly
+            color="primary"
+            autoFocus
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 };

@@ -12,7 +12,7 @@ const PostForm = ({ onAddPost }) => {
     event.preventDefault();
 
     // Ensure all fields are properly populated before submitting
-    if (!title || !content || !serviceType || !credits) {
+    if (!title || !content || !serviceType || credits === "") {
       alert("Please fill all fields");
       return;
     }

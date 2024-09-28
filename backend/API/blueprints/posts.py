@@ -9,8 +9,9 @@ posts_bp = Blueprint("posts_bp", __name__)
 def add_post():
     try:
         data = request.get_json()
-        if not data.get("type") or not data.get("credits") or not data.get("title") or not data.get("content"):
-            return jsonify({"error": "Missing required fields"}), 400
+        if not data.get("type") or not isinstance(data.get("credits"), int) or data.get("credits") not in [0, 1, 2] or not data.get("title") or not data.get("content"):
+            return jsonify({"error": "Missing or invalid required fields"}), 400
+    
 
         new_post = Post(
             type=data["type"],

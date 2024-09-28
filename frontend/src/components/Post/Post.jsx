@@ -2,30 +2,41 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Card, CardContent, Typography, Avatar, IconButton, TextField, Button, Chip, Grid, CardActions } from '@mui/material';
 import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
+import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt'; // For unliked state
 import StarIcon from '@mui/icons-material/Star';
 import { deepPurple } from '@mui/material/colors';
 
 const Post = ({ postId }) => {
   const [postData, setPostData] = useState(null);
-  const [upvotes, setUpvotes] = useState(0);
+  const [upvotes, setUpvotes] = useState(0);  // To store the total upvotes
+  const [hasLiked, setHasLiked] = useState(false); // Track whether the user has liked the post
   const [comments, setComments] = useState([]);
   const [commentInput, setCommentInput] = useState('');
 
   useEffect(() => {
+    // Fetch post details
     axios.get(`http://127.0.0.1:7070/api/posts/${postId}`, { withCredentials: true })
       .then((response) => {
         const post = response.data;
         setPostData(post);
-        setUpvotes(post.likes);
         setComments(post.comments);
+
+        // Fetch like status and total likes for this post
+        axios.get(`http://127.0.0.1:7070/api/posts/${postId}/has_liked`, { withCredentials: true })
+          .then((res) => {
+            setHasLiked(res.data.hasLiked); // Whether the current user has liked the post
+            setUpvotes(res.data.likes); // Total upvotes from all users
+          })
+          .catch(err => console.error('Error checking like status:', err));
       })
       .catch(error => console.error('Error fetching post:', error));
   }, [postId]);
 
   const handleUpvote = () => {
     axios.post(`http://127.0.0.1:7070/api/posts/${postId}/like`, {}, { withCredentials: true })
-      .then(() => {
-        setUpvotes(prevUpvotes => prevUpvotes + 1);
+      .then((response) => {
+        setUpvotes(response.data.likes);  // Update total likes
+        setHasLiked(!hasLiked);  // Toggle the user's like status
       })
       .catch(error => console.error('Error upvoting post:', error));
   };
@@ -105,7 +116,7 @@ const Post = ({ postId }) => {
 
       <CardActions disableSpacing>
         <IconButton onClick={handleUpvote} aria-label="upvote">
-          <ThumbUpAltIcon />
+          {hasLiked ? <ThumbUpAltIcon /> : <ThumbUpOffAltIcon />} {/* Change icon based on like status */}
           <Typography sx={{ marginLeft: '8px' }}>{upvotes}</Typography>
         </IconButton>
       </CardActions>

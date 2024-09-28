@@ -19,14 +19,13 @@ class NUsers(db.Model, UserMixin):
     current_location = db.Column(db.String(100))
     skills = db.relationship("UserSkills", backref="nuser", lazy=True)
 
-    # Dynamically set default role_id to the "user" role
     role_id = db.Column(db.Integer, db.ForeignKey("roles.id"), nullable=False)
     role = db.relationship("Roles", backref="nusers", lazy=True)
 
     def __init__(self, *args, **kwargs):
         if "role_id" not in kwargs:
-            user_role = Roles.query.filter_by(name="user").first()  # Fetch "user" role
-            kwargs["role_id"] = user_role.id  # Set the role_id to the user role
+            user_role = Roles.query.filter_by(name="user").first()
+            kwargs["role_id"] = user_role.id
         super(NUsers, self).__init__(*args, **kwargs)
 
 
@@ -47,11 +46,8 @@ class Post(db.Model):
     likes = db.Column(db.Integer, default=0)
     comments = db.relationship("Comment", backref="post", lazy=True)
     author_id = db.Column(db.String, db.ForeignKey("nusers.id"), nullable=False)
-
-    # Add timestamp field
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Relationship with NUsers (author)
     author = db.relationship("NUsers", backref="posts", lazy=True)
 
 
@@ -63,7 +59,16 @@ class Comment(db.Model):
     author_id = db.Column(db.String, db.ForeignKey("nusers.id"), nullable=False)
 
 
-# the InitializationFlag model
+class PostLikes(db.Model):
+    __tablename__ = "post_likes"
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey("posts.id"), nullable=False)
+    user_id = db.Column(db.String, db.ForeignKey("nusers.id"), nullable=False)
+
+    post = db.relationship("Post", backref="post_likes", lazy=True)
+    user = db.relationship("NUsers", backref="user_likes", lazy=True)
+
+
 class InitializationFlag(db.Model):
     __tablename__ = "initialization_flag"
     id = db.Column(db.Integer, primary_key=True)

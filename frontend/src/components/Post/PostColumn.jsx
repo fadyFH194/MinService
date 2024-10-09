@@ -8,10 +8,10 @@ const PostColumn = () => {
   const [posts, setPosts] = useState([]);
 
   useEffect(() => {
+    // Fetch posts from the backend and set them directly
     axios.get('http://127.0.0.1:7070/api/posts', { withCredentials: true })
       .then(response => {
-        const sortedPosts = response.data.sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort posts by date (newest first)
-        setPosts(sortedPosts);
+        setPosts(response.data); // Use the order as returned by the backend
       })
       .catch(error => console.error('Error fetching posts:', error));
   }, []);

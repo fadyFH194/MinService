@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
 from ..models import db, Post, Comment, PostLikes
+from datetime import timedelta
 
 posts_bp = Blueprint("posts_bp", __name__)
 
@@ -163,10 +164,22 @@ def get_post(post_id):
     return jsonify(post_data), 200
 
 
+from datetime import timedelta
+
 @posts_bp.route("/posts", methods=["GET"])
 def get_posts():
     try:
-        posts = Post.query.order_by(Post.timestamp.desc()).all()
+        # Fetch all posts
+        posts = Post.query.all()
+
+        # Calculate likes dynamically from the PostLikes table and sort posts
+        posts_sorted = sorted(
+            posts,
+            key=lambda p: p.timestamp + timedelta(days=PostLikes.query.filter_by(post_id=p.id).count()),
+            reverse=True
+        )
+
+        # Create the list of post data to return, preserving the sorted order
         posts_data = [
             {
                 "id": post.id,
@@ -174,13 +187,15 @@ def get_posts():
                 "credits": post.credits,
                 "title": post.title,
                 "content": post.content,
-                "likes": post.likes,
+                "likes": PostLikes.query.filter_by(post_id=post.id).count(),
                 "comments": [{"id": comment.id, "content": comment.content} for comment in post.comments],
                 "author": post.author.name,
+                "author_picture": post.author.picture if post.author.picture else None,
                 "date": post.timestamp.strftime("%Y-%m-%d %H:%M:%S") if post.timestamp else "Unknown",
             }
-            for post in posts
+            for post in posts_sorted
         ]
+
         return jsonify(posts_data), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

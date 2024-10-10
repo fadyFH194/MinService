@@ -13,10 +13,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  FormHelperText,
 } from "@mui/material";
 import Autocomplete from "@mui/material/Autocomplete";
-import validateFormData from "./NUserFormValidator"; 
 
 const formControlStyle = {
   margin: "8px",
@@ -49,7 +47,13 @@ const gridContainerStyle = {
   alignItems: "center",
 };
 
-const skillsData = ["Communication", "Teamwork", "Problem Solving", "Project Management", "Critical Thinking"]; // Example skills
+const skillsData = [
+  "Communication",
+  "Teamwork",
+  "Problem Solving",
+  "Project Management",
+  "Critical Thinking",
+]; // Example skills
 
 export default function NUserFormPage() {
   const navigate = useNavigate();
@@ -58,10 +62,9 @@ export default function NUserFormPage() {
   const [formData, setFormData] = useState({
     name: "",
     about: "",
-    classBatch: "",  // Make sure the naming matches throughout your code
+    classBatch: "",
     currentLocation: "",
     skills: [],
-    ...userData,  // This will spread your userData into the initial state
   });
 
   const [formErrors, setFormErrors] = useState({});
@@ -69,40 +72,54 @@ export default function NUserFormPage() {
   const api = useApi();
 
   useEffect(() => {
-    if (isUpdateMode && userData) {
-      setFormData({
-        name: userData.name || "",
-        about: userData.about || "",
-        classBatch: userData.class_batch || "",  // Check the exact key names in userData
-        currentLocation: userData.current_location || "",
-        skills: userData.skills || [],
-      });
+    if (isUpdateMode) {
+      // Fetch user data from backend if not provided
+      if (!userData) {
+        api
+          .get("/nusers-view")
+          .then((response) => {
+            if (response.status === 200) {
+              setFormData({
+                name: response.data.name || "",
+                about: response.data.about || "",
+                classBatch: response.data.classBatch || "",
+                currentLocation: response.data.currentLocation || "",
+                skills: response.data.skills || [],
+              });
+            } else {
+              console.error("Failed to load user data");
+            }
+          })
+          .catch((error) => {
+            console.error("Error fetching user data", error);
+          });
+      } else {
+        setFormData({
+          name: userData.name || "",
+          about: userData.about || "",
+          classBatch: userData.classBatch || "",
+          currentLocation: userData.currentLocation || "",
+          skills: userData.skills || [],
+        });
+      }
     }
-  }, [userData, isUpdateMode]);
+  }, [userData, isUpdateMode, api]);
 
-  const handleChange = (event, newValue, field) => {
-    if (field === 'skills') {
-      setFormData({ ...formData, [field]: newValue });
-    } else {
-      const { name, value } = event.target;
-      setFormData({ ...formData, [name]: value });
-    }
+  // Adjusted handleChange function
+  const handleChange = (name, value) => {
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const validation = validateFormData(formData);
-    setFormErrors(validation.errors);
+    // You can add form validation here if needed
 
-    if (!validation.isValid) {
-      console.log("Validation failed:", validation.errors);
-      return;
-    }
+    const endpoint = "/nusers-data";
+    const method = isUpdateMode ? "put" : "post";
 
-    const endpoint = isUpdateMode ? "/update-nuser" : "/nusers-data";
     try {
-      const response = await api[isUpdateMode ? 'put' : 'post'](endpoint, formData);
-      if (response.status === 200) {
+      const response = await api[method](endpoint, formData);
+      if (response.status === 200 || response.status === 201) {
         navigate("/");
       } else {
         console.log("Operation failed with status:", response.status);
@@ -116,7 +133,7 @@ export default function NUserFormPage() {
     <Grid container style={gridContainerStyle}>
       <Paper elevation={3} style={paperStyle}>
         <Typography variant="h4" style={titleStyle}>
-          {isUpdateMode ? "Update Your N-Profile" : "Create Your N-Profile"}
+          {isUpdateMode ? "Update Your Profile" : "Create Your Profile"}
         </Typography>
         <Divider style={{ marginBottom: "16px" }} />
         <form onSubmit={handleSubmit}>
@@ -125,7 +142,7 @@ export default function NUserFormPage() {
             name="name"
             style={formControlStyle}
             value={formData.name}
-            onChange={handleChange}
+            onChange={(event) => handleChange(event.target.name, event.target.value)}
             required
           />
           <TextField
@@ -133,7 +150,7 @@ export default function NUserFormPage() {
             name="about"
             style={formControlStyle}
             value={formData.about}
-            onChange={handleChange}
+            onChange={(event) => handleChange(event.target.name, event.target.value)}
             multiline
             rows={4}
           />
@@ -141,9 +158,10 @@ export default function NUserFormPage() {
             <InputLabel id="class-batch-label">Class Batch</InputLabel>
             <Select
               labelId="class-batch-label"
-              name="classBatch"
-              value={formData.classBatch}  // Make sure this matches the state property name
-              onChange={handleChange}
+              id="class-batch"
+              name="classBatch" // Ensure name attribute is set
+              value={formData.classBatch}
+              onChange={(event) => handleChange(event.target.name, event.target.value)}
               label="Class Batch"
             >
               <MenuItem value="M25">M25</MenuItem>
@@ -156,11 +174,8 @@ export default function NUserFormPage() {
             label="Current Location"
             name="currentLocation"
             style={formControlStyle}
-            value={formData.currentLocation}  // Adjusted to match the corrected state property name
-            onChange={handleChange}
-            InputLabelProps={{
-              shrink: Boolean(formData.currentLocation), // This will ensure the label shrinks only if there's a value
-            }}
+            value={formData.currentLocation}
+            onChange={(event) => handleChange(event.target.name, event.target.value)}
           />
 
           <Autocomplete
@@ -168,7 +183,7 @@ export default function NUserFormPage() {
             options={skillsData}
             freeSolo
             value={formData.skills}
-            onChange={(event, newValue) => handleChange(event, newValue, 'skills')}
+            onChange={(event, newValue) => handleChange("skills", newValue)}
             renderTags={(value, getTagProps) =>
               value.map((option, index) => (
                 <Chip variant="outlined" label={option} {...getTagProps({ index })} />
@@ -177,13 +192,10 @@ export default function NUserFormPage() {
             renderInput={(params) => (
               <TextField {...params} variant="outlined" label="Skills" placeholder="Add skills" />
             )}
+            style={formControlStyle}
           />
           <Divider style={{ marginTop: "16px", marginBottom: "16px" }} />
-          <Button
-            type="submit"
-            variant="contained"
-            style={submitButtonStyle}
-          >
+          <Button type="submit" variant="contained" style={submitButtonStyle}>
             {isUpdateMode ? "Update Profile" : "Create Profile"}
           </Button>
         </form>

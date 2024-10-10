@@ -8,26 +8,70 @@ from ..models import db, NUsers, UserSkills
 userdata_bp = Blueprint("userdata_bp", __name__)
 CORS(userdata_bp, supports_credentials=True)
 
-
 @userdata_bp.route("/nusers-data", methods=["POST"])
 @login_required
-def register_nuser():
+def create_nuser():
     if not current_user.is_authenticated:
         return jsonify({"error": "User not logged in"}), 401
 
     try:
         data = request.get_json()
-        name = data["name"]
-        about = data["about"]
-        class_batch = data["classBatch"]
-        current_location = data["currentLocation"]
-        skills_list = set(data["skills"])
+        name = data.get("name")
+        about = data.get("about")
+        class_batch = data.get("classBatch")
+        current_location = data.get("currentLocation")
+        skills_list = set(data.get("skills", []))
 
-        # Retrieve or create the NUser instance
+        # Check if the user already has a profile
+        nuser = NUsers.query.filter_by(id=current_user.id).first()
+        if nuser:
+            return jsonify({"error": "User profile already exists"}), 400
+
+        # Create new NUser instance
+        nuser = NUsers(
+            id=current_user.id,
+            name=name,
+            about=about,
+            class_batch=class_batch,
+            current_location=current_location,
+        )
+        db.session.add(nuser)
+
+        # Add skills
+        for skill in skills_list:
+            new_skill = UserSkills(skill=skill, nuser_id=nuser.id)
+            db.session.add(new_skill)
+
+        db.session.commit()
+        return jsonify({"success": "NUser profile created successfully"}), 201
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error in create_nuser: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@userdata_bp.route("/nusers-data", methods=["PUT"])
+@login_required
+def update_nuser():
+    if not current_user.is_authenticated:
+        return jsonify({"error": "User not logged in"}), 401
+
+    try:
+        data = request.get_json()
+        current_app.logger.info(f"Received data: {data}")
+
+        name = data.get("name")
+        about = data.get("about")
+        class_batch = data.get("classBatch")
+        current_location = data.get("currentLocation")
+        skills_list = set(data.get("skills", []))
+
+        current_app.logger.info(f"Parsed data - class_batch: {class_batch}, current_location: {current_location}")
+
+        # Retrieve the NUser instance
         nuser = NUsers.query.filter_by(id=current_user.id).first()
         if not nuser:
-            nuser = NUsers(id=current_user.id)
-            db.session.add(nuser)
+            return jsonify({"error": "User profile not found"}), 404
 
         # Update NUser information
         nuser.name = name
@@ -35,32 +79,27 @@ def register_nuser():
         nuser.class_batch = class_batch
         nuser.current_location = current_location
 
-        # Manage associated skills
-        current_skills = {skill.skill for skill in nuser.skills}
-        for user_skill in nuser.skills:
-            if user_skill.skill not in skills_list:
-                db.session.delete(user_skill)
+        # Update skills
+        # First, delete existing skills
+        UserSkills.query.filter_by(nuser_id=nuser.id).delete()
+
+        # Then, add new skills
         for skill in skills_list:
-            if skill not in current_skills:
-                new_skill = UserSkills(skill=skill, nuser_id=nuser.id)
-                db.session.add(new_skill)
+            new_skill = UserSkills(skill=skill, nuser_id=nuser.id)
+            db.session.add(new_skill)
 
         db.session.commit()
         return jsonify({"success": "NUser profile updated successfully"}), 200
 
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error in register_nuser: {e}")
+        current_app.logger.error(f"Error in update_nuser: {e}")
         return jsonify({"error": str(e)}), 500
-
 
 @userdata_bp.route("/nusers-view", methods=["GET"])
 @login_required
 def get_nuser_data():
     try:
-        if not current_user or not current_user.is_authenticated:
-            return jsonify({"error": "User not logged in"}), 401
-
         nuser = NUsers.query.filter_by(id=current_user.id).first()
         if not nuser:
             return jsonify({"error": "User not found"}), 404

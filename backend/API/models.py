@@ -37,6 +37,15 @@ class UserSkills(db.Model):
     nuser_id = db.Column(db.String, db.ForeignKey("nusers.id"), nullable=False)
 
 
+class Tag(db.Model):
+    __tablename__ = "tags"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False, unique=True)
+
+    # Establishing the many-to-many relationship with Post through PostTags
+    posts = db.relationship("Post", secondary="post_tags", back_populates="tags")
+
+
 class Post(db.Model):
     __tablename__ = "posts"
     id = db.Column(db.Integer, primary_key=True)
@@ -50,6 +59,9 @@ class Post(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     author = db.relationship("NUsers", backref="posts", lazy=True)
+    
+    # Relationship for many-to-many association with tags
+    tags = db.relationship("Tag", secondary="post_tags", back_populates="posts")
 
 
 class Comment(db.Model):
@@ -72,6 +84,12 @@ class PostLikes(db.Model):
 
     post = db.relationship("Post", backref="post_likes", lazy=True)
     user = db.relationship("NUsers", backref="user_likes", lazy=True)
+
+
+class PostTags(db.Model):
+    __tablename__ = "post_tags"
+    post_id = db.Column(db.Integer, db.ForeignKey("posts.id"), primary_key=True)
+    tag_id = db.Column(db.Integer, db.ForeignKey("tags.id"), primary_key=True)
 
 
 class InitializationFlag(db.Model):

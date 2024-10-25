@@ -1,9 +1,10 @@
 from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
-from ..models import db, Post, Comment, PostLikes
+from ..models import db, Post, Comment, PostLikes, Tag, UserSkills
 from datetime import timedelta
 
 posts_bp = Blueprint("posts_bp", __name__)
+
 
 @posts_bp.route("/posts", methods=["POST"])
 @login_required
@@ -13,6 +14,7 @@ def add_post():
         if not data.get("type") or not isinstance(data.get("credits"), int) or data.get("credits") not in [0, 1, 2] or not data.get("title") or not data.get("content"):
             return jsonify({"error": "Missing or invalid required fields"}), 400
 
+        # Create a new post
         new_post = Post(
             type=data["type"],
             credits=int(data["credits"]),
@@ -21,6 +23,17 @@ def add_post():
             author_id=current_user.id
         )
 
+        # Add tags to the post if provided
+        tag_names = data.get("tags", [])
+        tags = []
+        for tag_name in tag_names:
+            tag = Tag.query.filter_by(name=tag_name).first()
+            if not tag:
+                tag = Tag(name=tag_name)
+                db.session.add(tag)
+            tags.append(tag)
+
+        new_post.tags = tags
         db.session.add(new_post)
         db.session.commit()
 
@@ -31,19 +44,19 @@ def add_post():
                 "title": new_post.title,
                 "content": new_post.content,
                 "credits": new_post.credits,
-                "type": new_post.type,  # Changed from 'serviceType' to 'type'
+                "type": new_post.type,
                 "author": current_user.name,
-                "author_id": current_user.id,  # Include author_id
-                "likes": 0,  # New post starts with 0 likes
+                "author_id": current_user.id,
+                "likes": 0,
                 "comments": [],
                 "date": new_post.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
-                "author_picture": current_user.picture if current_user.picture else None
+                "author_picture": current_user.picture if current_user.picture else None,
+                "tags": [tag.name for tag in new_post.tags]
             }
         }), 201
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
-
 
 
 @posts_bp.route("/posts/<int:post_id>/comments", methods=["POST"])
@@ -54,14 +67,13 @@ def add_comment(post_id):
         new_comment = Comment(
             content=data["content"],
             post_id=post_id,
-            author_id=current_user.id  # Associate comment with current user
+            author_id=current_user.id
         )
         db.session.add(new_comment)
         db.session.commit()
 
         return jsonify({
             "success": "Comment added successfully",
-            # Return the entire comment object with all necessary fields
             "id": new_comment.id,
             "content": new_comment.content,
             "author": current_user.name,
@@ -72,8 +84,8 @@ def add_comment(post_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
-    
-    
+
+
 @posts_bp.route("/comments/<int:comment_id>/edit", methods=["PUT"])
 @login_required
 def edit_comment(comment_id):
@@ -82,21 +94,17 @@ def edit_comment(comment_id):
         if not comment:
             return jsonify({"error": "Comment not found"}), 404
 
-        # Only allow the comment's author to edit it
         if comment.author_id != current_user.id:
             return jsonify({"error": "Unauthorized"}), 403
 
-        # Get updated data from the request
         data = request.get_json()
         new_content = data.get("content")
         if not new_content:
             return jsonify({"error": "No content provided"}), 400
 
-        # Update the comment
         comment.content = new_content
         db.session.commit()
 
-        # Return the updated comment data
         return jsonify({
             "success": "Comment updated successfully",
             "comment": {
@@ -113,7 +121,6 @@ def edit_comment(comment_id):
         return jsonify({"error": str(e)}), 500
 
 
-    
 @posts_bp.route("/posts/<int:post_id>/delete", methods=["DELETE"])
 @login_required
 def delete_post(post_id):
@@ -122,11 +129,9 @@ def delete_post(post_id):
         if not post:
             return jsonify({"error": "Post not found"}), 404
 
-        # Ensure that only the author can delete the post
         if post.author_id != current_user.id:
             return jsonify({"error": "Unauthorized"}), 403
 
-        # Delete associated likes and comments
         Comment.query.filter_by(post_id=post_id).delete()
         PostLikes.query.filter_by(post_id=post_id).delete()
         db.session.delete(post)
@@ -136,8 +141,8 @@ def delete_post(post_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
-    
-    
+
+
 @posts_bp.route("/comments/<int:comment_id>/delete", methods=["DELETE"])
 @login_required
 def delete_comment(comment_id):
@@ -146,7 +151,6 @@ def delete_comment(comment_id):
         if not comment:
             return jsonify({"error": "Comment not found"}), 404
 
-        # Only allow the comment's author to delete it
         if comment.author_id != current_user.id:
             return jsonify({"error": "Unauthorized"}), 403
 
@@ -156,8 +160,8 @@ def delete_comment(comment_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
-    
-    
+
+
 @posts_bp.route("/posts/<int:post_id>/edit", methods=["PUT"])
 @login_required
 def edit_post(post_id):
@@ -166,26 +170,30 @@ def edit_post(post_id):
         if not post:
             return jsonify({"error": "Post not found"}), 404
 
-        # Ensure that only the author can edit the post
         if post.author_id != current_user.id:
             return jsonify({"error": "Unauthorized"}), 403
 
-        # Get updated data from the request
         data = request.get_json()
-
-        # Update the post fields (only if provided)
         post.title = data.get("title", post.title)
         post.content = data.get("content", post.content)
         post.type = data.get("type", post.type)
         post.credits = data.get("credits", post.credits)
 
-        # Commit changes to the database
+        # Update tags
+        tag_names = data.get("tags", [])
+        tags = []
+        for tag_name in tag_names:
+            tag = Tag.query.filter_by(name=tag_name).first()
+            if not tag:
+                tag = Tag(name=tag_name)
+                db.session.add(tag)
+            tags.append(tag)
+
+        post.tags = tags
         db.session.commit()
 
-        # Recalculate total likes after editing
         total_likes = PostLikes.query.filter_by(post_id=post.id).count()
 
-        # Return the updated post data
         return jsonify({
             "success": "Post updated successfully",
             "post": {
@@ -193,18 +201,18 @@ def edit_post(post_id):
                 "title": post.title,
                 "content": post.content,
                 "credits": post.credits,
-                "type": post.type,  # Changed from 'serviceType' to 'type'
+                "type": post.type,
                 "author": post.author.name,
-                "author_id": post.author_id,  # Include author_id
+                "author_id": post.author_id,
                 "likes": total_likes,
                 "date": post.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
-                "author_picture": post.author.picture if post.author.picture else None
+                "author_picture": post.author.picture if post.author.picture else None,
+                "tags": [tag.name for tag in post.tags]
             }
         }), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
-
 
 
 @posts_bp.route("/posts/<int:post_id>/like", methods=["POST"])
@@ -215,22 +223,18 @@ def like_post(post_id):
         if not post:
             return jsonify({"error": "Post not found"}), 404
 
-        # Check if the current user has already liked the post
         existing_like = PostLikes.query.filter_by(post_id=post_id, user_id=current_user.id).first()
 
         if existing_like:
-            # If the user has already liked the post, remove their like
             db.session.delete(existing_like)
             db.session.commit()
             has_liked = False
         else:
-            # If the user has not liked the post, add a new like
             new_like = PostLikes(post_id=post_id, user_id=current_user.id)
             db.session.add(new_like)
             db.session.commit()
             has_liked = True
 
-        # Recalculate total likes after the like/unlike action
         total_likes = PostLikes.query.filter_by(post_id=post_id).count()
 
         return jsonify({"success": "Post updated", "likes": total_likes, "hasLiked": has_liked}), 200
@@ -258,7 +262,6 @@ def get_post(post_id):
     if not post:
         return jsonify({"error": "Post not found"}), 404
 
-    # Calculate total likes dynamically
     total_likes = PostLikes.query.filter_by(post_id=post.id).count()
 
     post_data = {
@@ -269,38 +272,35 @@ def get_post(post_id):
         "content": post.content,
         "likes": total_likes,
         "author": post.author.name,
-        "author_id": post.author_id,  # Include author_id
-        "author_picture": post.author.picture if post.author.picture else None,  # Author's picture
+        "author_id": post.author_id,
+        "author_picture": post.author.picture if post.author.picture else None,
         "date": post.timestamp.strftime("%Y-%m-%d %H:%M:%S") if post.timestamp else "Unknown",
+        "tags": [tag.name for tag in post.tags],
         "comments": [
             {
                 "id": comment.id,
                 "content": comment.content,
                 "author": comment.author.name,
-                "author_picture": comment.author.picture if comment.author.picture else None,  # Comment author's picture from NUsers
+                "author_picture": comment.author.picture if comment.author.picture else None,
                 "timestamp": comment.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
-                "author_id": comment.author_id  # Include author_id for comments
+                "author_id": comment.author_id
             } for comment in post.comments
         ]
     }
     return jsonify(post_data), 200
 
 
-
 @posts_bp.route("/posts", methods=["GET"])
 def get_posts():
     try:
-        # Fetch all posts
         posts = Post.query.all()
 
-        # Calculate likes dynamically from the PostLikes table and sort posts
         posts_sorted = sorted(
             posts,
             key=lambda p: p.timestamp + timedelta(days=PostLikes.query.filter_by(post_id=p.id).count()),
             reverse=True
         )
 
-        # Create the list of post data to return, preserving the sorted order
         posts_data = [
             {
                 "id": post.id,
@@ -314,6 +314,7 @@ def get_posts():
                 "author_id": post.author_id,
                 "author_picture": post.author.picture if post.author.picture else None,
                 "date": post.timestamp.strftime("%Y-%m-%d %H:%M:%S") if post.timestamp else "Unknown",
+                "tags": [tag.name for tag in post.tags]
             }
             for post in posts_sorted
         ]
@@ -321,3 +322,18 @@ def get_posts():
         return jsonify(posts_data), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@posts_bp.route("/tags", methods=["GET"])
+def get_tags():
+    try:
+        # Query the UserSkills table to get unique skill names
+        skills = db.session.query(UserSkills.skill).distinct().all()
+        
+        # Extract skill names from the query result
+        skill_tags = [skill[0] for skill in skills]  # skills is a list of tuples (skill_name,)
+        
+        return jsonify(skill_tags), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+

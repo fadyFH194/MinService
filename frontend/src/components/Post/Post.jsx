@@ -27,6 +27,7 @@ import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
 import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
 import StarIcon from '@mui/icons-material/Star';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import Autocomplete from '@mui/material/Autocomplete';
 import { useAuth } from '../../contexts/AuthProvider';
 
 const Post = ({ postId, onDelete, refreshPosts }) => {
@@ -48,6 +49,9 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
   const [editType, setEditType] = useState('');
   const [editCredits, setEditCredits] = useState(0);
   const [editCommentContent, setEditCommentContent] = useState('');
+  const [editTags, setEditTags] = useState([]);
+  const [availableTags, setAvailableTags] = useState([]);
+
 
   useEffect(() => {
     // Fetch the post data
@@ -203,8 +207,16 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
     setEditContent(postData.content);
     setEditType(postData.type);
     setEditCredits(postData.credits);
+    setEditTags(postData.tags || []);
     setEditDialogOpen(true);
     handleClosePostMenu();
+  
+    // Fetch available tags from the server
+    axios.get('http://127.0.0.1:7070/api/tags', { withCredentials: true })
+    .then((res) => {
+      setAvailableTags(res.data);
+    })
+    .catch((err) => console.error('Error fetching tags:', err));
   };
 
   const handleCloseEditDialog = () => {
@@ -223,27 +235,26 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
   };
 
   const handleEditPost = () => {
-    axios
-      .put(
-        `http://127.0.0.1:7070/api/posts/${postId}/edit`,
-        {
-          title: editTitle,
-          content: editContent,
-          type: editType,
-          credits: editCredits,
-        },
-        { withCredentials: true }
-      )
-      .then((response) => {
-        // Assuming response.data contains the updated post object
-        const updatedPost = response.data.post;
-        setPostData(updatedPost);
-        handleCloseEditDialog();
-        if (refreshPosts) {
-          refreshPosts();
-        }
-      })
-      .catch((error) => console.error('Error updating post:', error));
+    axios.put(
+      `http://127.0.0.1:7070/api/posts/${postId}/edit`,
+      {
+        title: editTitle,
+        content: editContent,
+        type: editType,
+        credits: editCredits,
+        tags: editTags,
+      },
+      { withCredentials: true }
+    )
+    .then((response) => {
+      const updatedPost = response.data.post;
+      setPostData(updatedPost);
+      handleCloseEditDialog();
+      if (refreshPosts) {
+        refreshPosts();
+      }
+    })
+    .catch((error) => console.error('Error updating post:', error));
   };
 
   if (!postData || !user) return <div>Loading...</div>;
@@ -325,6 +336,15 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
         <Typography variant="body1" sx={{ marginTop: 2 }}>
           {postData.content}
         </Typography>
+
+        {/* Display Tags Here */}
+        <Grid container spacing={1} sx={{ marginTop: 2 }}>
+          {postData.tags?.map((tag, index) => (
+            <Grid item key={index}>
+              <Chip label={tag} size="small" />
+            </Grid>
+          ))}
+        </Grid>
       </CardContent>
 
       <CardActions disableSpacing>
@@ -481,6 +501,16 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
               <DropdownItem value={2}>2</DropdownItem>
             </Select>
           </FormControl>
+          <Autocomplete
+            multiple
+            options={availableTags}
+            getOptionLabel={(option) => option}
+            value={editTags}
+            onChange={(event, newValue) => {
+              setEditTags(newValue);
+            }}
+            renderInput={(params) => <TextField {...params} label="Tags" margin="normal" />}
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseEditDialog} color="primary">

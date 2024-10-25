@@ -10,7 +10,7 @@ CORS(userdata_bp, supports_credentials=True)
 
 @userdata_bp.route("/nusers-data", methods=["POST"])
 @login_required
-def create_nuser():
+def create_or_update_nuser():
     if not current_user.is_authenticated:
         return jsonify({"error": "User not logged in"}), 401
 
@@ -22,33 +22,41 @@ def create_nuser():
         current_location = data.get("currentLocation")
         skills_list = set(data.get("skills", []))
 
-        # Check if the user already has a profile
+        # Retrieve the NUser instance if it exists
         nuser = NUsers.query.filter_by(id=current_user.id).first()
-        if nuser:
-            return jsonify({"error": "User profile already exists"}), 400
+        if not nuser:
+            # Create new NUser instance if not found
+            nuser = NUsers(
+                id=current_user.id,
+                name=name,
+                about=about,
+                class_batch=class_batch,
+                current_location=current_location,
+            )
+            db.session.add(nuser)
+        else:
+            # Update existing fields only if new data is provided and not empty
+            nuser.name = name if name else nuser.name
+            nuser.about = about if about else nuser.about
+            nuser.class_batch = class_batch if class_batch else nuser.class_batch
+            nuser.current_location = current_location if current_location else nuser.current_location
 
-        # Create new NUser instance
-        nuser = NUsers(
-            id=current_user.id,
-            name=name,
-            about=about,
-            class_batch=class_batch,
-            current_location=current_location,
-        )
-        db.session.add(nuser)
+            # Remove existing skills
+            UserSkills.query.filter_by(nuser_id=nuser.id).delete()
 
-        # Add skills
+        # Add new skills if any
         for skill in skills_list:
             new_skill = UserSkills(skill=skill, nuser_id=nuser.id)
             db.session.add(new_skill)
 
         db.session.commit()
-        return jsonify({"success": "NUser profile created successfully"}), 201
+        return jsonify({"success": "NUser profile created/updated successfully"}), 201
 
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error in create_nuser: {e}")
+        current_app.logger.error(f"Error in create_or_update_nuser: {e}")
         return jsonify({"error": str(e)}), 500
+
 
 @userdata_bp.route("/nusers-data", methods=["PUT"])
 @login_required

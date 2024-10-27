@@ -14,7 +14,10 @@ class NUsers(db.Model, UserMixin):
     __tablename__ = "nusers"
     id = db.Column(db.String, primary_key=True)
     name = db.Column(db.String(100))
-    picture = db.Column(db.String(255))  # Add this line to store the profile picture URL
+    email = db.Column(db.String(120), unique=True, nullable=False)  # Add email field
+    picture = db.Column(
+        db.String(255)
+    )  # Add this line to store the profile picture URL
     about = db.Column(db.String(255))
     class_batch = db.Column(db.String(100))
     current_location = db.Column(db.String(100))
@@ -59,7 +62,7 @@ class Post(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     author = db.relationship("NUsers", backref="posts", lazy=True)
-    
+
     # Relationship for many-to-many association with tags
     tags = db.relationship("Tag", secondary="post_tags", back_populates="posts")
 

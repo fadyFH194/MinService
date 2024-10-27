@@ -8,6 +8,7 @@ from ..models import db, NUsers, UserSkills
 userdata_bp = Blueprint("userdata_bp", __name__)
 CORS(userdata_bp, supports_credentials=True)
 
+
 @userdata_bp.route("/nusers-data", methods=["POST"])
 @login_required
 def create_or_update_nuser():
@@ -39,7 +40,9 @@ def create_or_update_nuser():
             nuser.name = name if name else nuser.name
             nuser.about = about if about else nuser.about
             nuser.class_batch = class_batch if class_batch else nuser.class_batch
-            nuser.current_location = current_location if current_location else nuser.current_location
+            nuser.current_location = (
+                current_location if current_location else nuser.current_location
+            )
 
             # Remove existing skills
             UserSkills.query.filter_by(nuser_id=nuser.id).delete()
@@ -74,7 +77,9 @@ def update_nuser():
         current_location = data.get("currentLocation")
         skills_list = set(data.get("skills", []))
 
-        current_app.logger.info(f"Parsed data - class_batch: {class_batch}, current_location: {current_location}")
+        current_app.logger.info(
+            f"Parsed data - class_batch: {class_batch}, current_location: {current_location}"
+        )
 
         # Retrieve the NUser instance
         nuser = NUsers.query.filter_by(id=current_user.id).first()
@@ -103,6 +108,7 @@ def update_nuser():
         db.session.rollback()
         current_app.logger.error(f"Error in update_nuser: {e}")
         return jsonify({"error": str(e)}), 500
+
 
 @userdata_bp.route("/nusers-view", methods=["GET"])
 @login_required

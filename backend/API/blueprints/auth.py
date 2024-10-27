@@ -35,23 +35,26 @@ def login():
 
     user_id = user_info["id"]
     given_name = user_info["given_name"]
+    email = user_info["email"]  # Extract email from user_info
     picture = user_info["picture"]
 
     user = NUsers.query.filter_by(id=user_id).first()
 
     if not user:
-        # If the user doesn't exist, create a new user and store the picture URL
+        # If the user doesn't exist, create a new user and store the picture URL and email
         user = NUsers(
             id=user_id,
             name=given_name,
+            email=email,  # Store the user's email
             picture=picture,  # Store the picture URL in the database
         )
         db.session.add(user)
         db.session.commit()
         new_user = True
     else:
-        # If the user exists, update the picture URL and name if necessary
+        # If the user exists, update the picture URL, email, and name if necessary
         user.name = given_name
+        user.email = email  # Update the email in case it has changed
         user.picture = picture  # Update the picture URL in case it has changed
         db.session.commit()
         new_user = False
@@ -65,6 +68,7 @@ def login():
                 "user": {
                     "id": user_id,
                     "given_name": given_name,
+                    "email": email,  # Include email in the response
                     "picture": picture,
                     "new_user": new_user,
                     "role": user.role.name,

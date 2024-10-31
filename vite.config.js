@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
+// Load environment variables starting with VITE_ from .env
 export default defineConfig({
   root: 'frontend', // Set the root to 'frontend'
   build: {
@@ -9,7 +10,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:7070",
+        target: process.env.VITE_APP_API_URL, // Use the environment variable for the API URL
         changeOrigin: true,
         secure: false,
       },

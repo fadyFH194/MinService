@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
 from ..models import db, Post, Comment, PostLikes, Tag, UserSkills
 from datetime import timedelta
+from .mail import send_email
 
 posts_bp = Blueprint("posts_bp", __name__)
 
@@ -11,7 +12,13 @@ posts_bp = Blueprint("posts_bp", __name__)
 def add_post():
     try:
         data = request.get_json()
-        if not data.get("type") or not isinstance(data.get("credits"), int) or data.get("credits") not in [0, 1, 2] or not data.get("title") or not data.get("content"):
+        if (
+            not data.get("type")
+            or not isinstance(data.get("credits"), int)
+            or data.get("credits") not in [0, 1, 2]
+            or not data.get("title")
+            or not data.get("content")
+        ):
             return jsonify({"error": "Missing or invalid required fields"}), 400
 
         # Create a new post
@@ -20,7 +27,7 @@ def add_post():
             credits=int(data["credits"]),
             title=data["title"],
             content=data["content"],
-            author_id=current_user.id
+            author_id=current_user.id,
         )
 
         # Add tags to the post if provided
@@ -37,25 +44,60 @@ def add_post():
         db.session.add(new_post)
         db.session.commit()
 
-        return jsonify({
-            "success": "Post added successfully",
-            "post": {
-                "id": new_post.id,
-                "title": new_post.title,
-                "content": new_post.content,
-                "credits": new_post.credits,
-                "type": new_post.type,
-                "author": current_user.name,
-                "author_id": current_user.id,
-                "likes": 0,
-                "comments": [],
-                "date": new_post.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
-                "author_picture": current_user.picture if current_user.picture else None,
-                "tags": [tag.name for tag in new_post.tags]
-            }
-        }), 201
+        # Find users whose skills match the post's tags
+        matching_skills = UserSkills.query.filter(UserSkills.skill.in_(tag_names)).all()
+        notified_users = set()
+
+        for user_skill in matching_skills:
+            profile_owner = user_skill.nuser
+            # Skip sending email if profile_owner is the post's author
+            if (
+                profile_owner.email
+                and profile_owner.id not in notified_users
+                and profile_owner.id != current_user.id
+            ):
+                notified_users.add(profile_owner.id)
+                try:
+                    send_email(
+                        to_email=profile_owner.email,
+                        subject=f"New Request for Help on MinService",
+                        message=f"Hello {profile_owner.name},\n\n"
+                        f"{current_user.name} asked for help with task '{new_post.title}' that is {new_post.type}, and based on your profile, you might be able to help.\n"
+                        f"Check it out on MinService.\n\n"
+                        f"Best regards,\nMinService",
+                    )
+                except Exception as e:
+                    app.logger.error(
+                        f"Failed to send email to {profile_owner.email}: {e}"
+                    )
+
+        return (
+            jsonify(
+                {
+                    "success": "Post added successfully",
+                    "post": {
+                        "id": new_post.id,
+                        "title": new_post.title,
+                        "content": new_post.content,
+                        "credits": new_post.credits,
+                        "type": new_post.type,
+                        "author": current_user.name,
+                        "author_id": current_user.id,
+                        "likes": 0,
+                        "comments": [],
+                        "date": new_post.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                        "author_picture": current_user.picture
+                        if current_user.picture
+                        else None,
+                        "tags": [tag.name for tag in new_post.tags],
+                    },
+                }
+            ),
+            201,
+        )
     except Exception as e:
         db.session.rollback()
+        app.logger.error(f"Error in add_post: {e}")
         return jsonify({"error": str(e)}), 500
 
 
@@ -65,22 +107,27 @@ def add_comment(post_id):
     try:
         data = request.get_json()
         new_comment = Comment(
-            content=data["content"],
-            post_id=post_id,
-            author_id=current_user.id
+            content=data["content"], post_id=post_id, author_id=current_user.id
         )
         db.session.add(new_comment)
         db.session.commit()
 
-        return jsonify({
-            "success": "Comment added successfully",
-            "id": new_comment.id,
-            "content": new_comment.content,
-            "author": current_user.name,
-            "author_id": current_user.id,
-            "author_picture": current_user.picture if current_user.picture else None,
-            "timestamp": new_comment.timestamp.strftime("%Y-%m-%d %H:%M:%S")
-        }), 201
+        return (
+            jsonify(
+                {
+                    "success": "Comment added successfully",
+                    "id": new_comment.id,
+                    "content": new_comment.content,
+                    "author": current_user.name,
+                    "author_id": current_user.id,
+                    "author_picture": current_user.picture
+                    if current_user.picture
+                    else None,
+                    "timestamp": new_comment.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                }
+            ),
+            201,
+        )
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
@@ -105,17 +152,24 @@ def edit_comment(comment_id):
         comment.content = new_content
         db.session.commit()
 
-        return jsonify({
-            "success": "Comment updated successfully",
-            "comment": {
-                "id": comment.id,
-                "content": comment.content,
-                "author": comment.author.name,
-                "author_id": comment.author_id,
-                "author_picture": comment.author.picture if comment.author.picture else None,
-                "timestamp": comment.timestamp.strftime("%Y-%m-%d %H:%M:%S")
-            }
-        }), 200
+        return (
+            jsonify(
+                {
+                    "success": "Comment updated successfully",
+                    "comment": {
+                        "id": comment.id,
+                        "content": comment.content,
+                        "author": comment.author.name,
+                        "author_id": comment.author_id,
+                        "author_picture": comment.author.picture
+                        if comment.author.picture
+                        else None,
+                        "timestamp": comment.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                    },
+                }
+            ),
+            200,
+        )
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
@@ -194,22 +248,29 @@ def edit_post(post_id):
 
         total_likes = PostLikes.query.filter_by(post_id=post.id).count()
 
-        return jsonify({
-            "success": "Post updated successfully",
-            "post": {
-                "id": post.id,
-                "title": post.title,
-                "content": post.content,
-                "credits": post.credits,
-                "type": post.type,
-                "author": post.author.name,
-                "author_id": post.author_id,
-                "likes": total_likes,
-                "date": post.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
-                "author_picture": post.author.picture if post.author.picture else None,
-                "tags": [tag.name for tag in post.tags]
-            }
-        }), 200
+        return (
+            jsonify(
+                {
+                    "success": "Post updated successfully",
+                    "post": {
+                        "id": post.id,
+                        "title": post.title,
+                        "content": post.content,
+                        "credits": post.credits,
+                        "type": post.type,
+                        "author": post.author.name,
+                        "author_id": post.author_id,
+                        "likes": total_likes,
+                        "date": post.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                        "author_picture": post.author.picture
+                        if post.author.picture
+                        else None,
+                        "tags": [tag.name for tag in post.tags],
+                    },
+                }
+            ),
+            200,
+        )
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
@@ -223,7 +284,9 @@ def like_post(post_id):
         if not post:
             return jsonify({"error": "Post not found"}), 404
 
-        existing_like = PostLikes.query.filter_by(post_id=post_id, user_id=current_user.id).first()
+        existing_like = PostLikes.query.filter_by(
+            post_id=post_id, user_id=current_user.id
+        ).first()
 
         if existing_like:
             db.session.delete(existing_like)
@@ -237,7 +300,12 @@ def like_post(post_id):
 
         total_likes = PostLikes.query.filter_by(post_id=post_id).count()
 
-        return jsonify({"success": "Post updated", "likes": total_likes, "hasLiked": has_liked}), 200
+        return (
+            jsonify(
+                {"success": "Post updated", "likes": total_likes, "hasLiked": has_liked}
+            ),
+            200,
+        )
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
@@ -274,18 +342,23 @@ def get_post(post_id):
         "author": post.author.name,
         "author_id": post.author_id,
         "author_picture": post.author.picture if post.author.picture else None,
-        "date": post.timestamp.strftime("%Y-%m-%d %H:%M:%S") if post.timestamp else "Unknown",
+        "date": post.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+        if post.timestamp
+        else "Unknown",
         "tags": [tag.name for tag in post.tags],
         "comments": [
             {
                 "id": comment.id,
                 "content": comment.content,
                 "author": comment.author.name,
-                "author_picture": comment.author.picture if comment.author.picture else None,
+                "author_picture": comment.author.picture
+                if comment.author.picture
+                else None,
                 "timestamp": comment.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
-                "author_id": comment.author_id
-            } for comment in post.comments
-        ]
+                "author_id": comment.author_id,
+            }
+            for comment in post.comments
+        ],
     }
     return jsonify(post_data), 200
 
@@ -297,8 +370,9 @@ def get_posts():
 
         posts_sorted = sorted(
             posts,
-            key=lambda p: p.timestamp + timedelta(days=PostLikes.query.filter_by(post_id=p.id).count()),
-            reverse=True
+            key=lambda p: p.timestamp
+            + timedelta(days=PostLikes.query.filter_by(post_id=p.id).count()),
+            reverse=True,
         )
 
         posts_data = [
@@ -309,12 +383,17 @@ def get_posts():
                 "title": post.title,
                 "content": post.content,
                 "likes": PostLikes.query.filter_by(post_id=post.id).count(),
-                "comments": [{"id": comment.id, "content": comment.content} for comment in post.comments],
+                "comments": [
+                    {"id": comment.id, "content": comment.content}
+                    for comment in post.comments
+                ],
                 "author": post.author.name,
                 "author_id": post.author_id,
                 "author_picture": post.author.picture if post.author.picture else None,
-                "date": post.timestamp.strftime("%Y-%m-%d %H:%M:%S") if post.timestamp else "Unknown",
-                "tags": [tag.name for tag in post.tags]
+                "date": post.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+                if post.timestamp
+                else "Unknown",
+                "tags": [tag.name for tag in post.tags],
             }
             for post in posts_sorted
         ]
@@ -329,11 +408,12 @@ def get_tags():
     try:
         # Query the UserSkills table to get unique skill names
         skills = db.session.query(UserSkills.skill).distinct().all()
-        
+
         # Extract skill names from the query result
-        skill_tags = [skill[0] for skill in skills]  # skills is a list of tuples (skill_name,)
-        
+        skill_tags = [
+            skill[0] for skill in skills
+        ]  # skills is a list of tuples (skill_name,)
+
         return jsonify(skill_tags), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-

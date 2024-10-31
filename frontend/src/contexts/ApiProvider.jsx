@@ -1,10 +1,10 @@
 import React, { createContext, useContext } from "react";
-import SwapsApiClient from "../Hooks/ApiClient";
+import ServiceApiClient from "../Hooks/ApiClient";
 
 const ApiContext = createContext();
 
 export default function ApiProvider({ children }) {
-  const api = new SwapsApiClient();
+  const api = new ServiceApiClient();
 
   return <ApiContext.Provider value={api}>{children}</ApiContext.Provider>;
 }

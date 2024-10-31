@@ -48,11 +48,11 @@ const gridContainerStyle = {
 };
 
 const skillsData = [
-  "Communication",
-  "Teamwork",
-  "Problem Solving",
+  "Political Science",
+  "Creative writing",
+  "Driving",
   "Project Management",
-  "Critical Thinking",
+  "Software Engineering",
 ]; // Example skills
 
 export default function NUserFormPage() {

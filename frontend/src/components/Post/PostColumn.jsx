@@ -1,19 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import Post from './Post';
 import PostForm from './PostForm';
 import { Box } from '@mui/material';
+import { useApi } from '../../contexts/ApiProvider'; // Adjust the import path accordingly
 
 const PostColumn = () => {
   const [posts, setPosts] = useState([]);
+  const api = useApi(); // Access the API client
 
-  const fetchPosts = () => {
-    axios
-      .get('http://127.0.0.1:7070/api/posts', { withCredentials: true })
-      .then((response) => {
-        setPosts(response.data); // Use the order as returned by the backend
-      })
-      .catch((error) => console.error('Error fetching posts:', error));
+  const fetchPosts = async () => {
+    try {
+      const response = await api.get('/posts');
+      if (response.ok) {
+        setPosts(response.body); // Use the order as returned by the backend
+      } else {
+        console.error('Error fetching posts:', response.body.error);
+      }
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+    }
   };
 
   useEffect(() => {

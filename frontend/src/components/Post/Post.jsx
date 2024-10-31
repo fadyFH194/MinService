@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import {
   Card,
   CardContent,
@@ -29,9 +28,12 @@ import StarIcon from '@mui/icons-material/Star';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Autocomplete from '@mui/material/Autocomplete';
 import { useAuth } from '../../contexts/AuthProvider';
+import { useApi } from '../../contexts/ApiProvider'; // Import useApi
 
 const Post = ({ postId, onDelete, refreshPosts }) => {
   const { user } = useAuth();
+  const api = useApi(); // Initialize the API context
+
   const [postData, setPostData] = useState(null);
   const [upvotes, setUpvotes] = useState(0);
   const [hasLiked, setHasLiked] = useState(false);
@@ -52,94 +54,96 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
   const [editTags, setEditTags] = useState([]);
   const [availableTags, setAvailableTags] = useState([]);
 
-
   useEffect(() => {
-    // Fetch the post data
-    axios
-      .get(`http://127.0.0.1:7070/api/posts/${postId}`, {
-        withCredentials: true,
-      })
-      .then((response) => {
-        const post = response.data;
-        setPostData(post);
-        setComments(post.comments);
-        setUpvotes(post.likes);
+    const fetchPostData = async () => {
+      try {
+        // Fetch the post data
+        const response = await api.get(`/posts/${postId}`);
+        if (response.ok) {
+          const post = response.body;
+          setPostData(post);
+          setComments(post.comments);
+          setUpvotes(post.likes);
 
-        // Check if the user has liked the post
-        axios
-          .get(`http://127.0.0.1:7070/api/posts/${postId}/has_liked`, {
-            withCredentials: true,
-          })
-          .then((res) => {
-            setHasLiked(res.data.hasLiked);
-          })
-          .catch((err) => console.error('Error checking like status:', err));
-      })
-      .catch((error) => console.error('Error fetching post:', error));
-  }, [postId]);
+          // Check if the user has liked the post
+          const res = await api.get(`/posts/${postId}/has_liked`);
+          if (res.ok) {
+            setHasLiked(res.body.hasLiked);
+          } else {
+            console.error('Error checking like status:', res.body.error);
+          }
+        } else {
+          console.error('Error fetching post:', response.body.error);
+        }
+      } catch (error) {
+        console.error('Error fetching post:', error);
+      }
+    };
 
-  const handleUpvote = () => {
-    axios
-      .post(
-        `http://127.0.0.1:7070/api/posts/${postId}/like`,
-        {},
-        { withCredentials: true }
-      )
-      .then((response) => {
-        // Assuming the backend returns the updated likes count and hasLiked status
-        const { likes, hasLiked } = response.data;
+    fetchPostData();
+  }, [postId, api]);
+
+  const handleUpvote = async () => {
+    try {
+      const response = await api.post(`/posts/${postId}/like`, {});
+      if (response.ok) {
+        const { likes, hasLiked } = response.body;
         setUpvotes(likes);
         setHasLiked(hasLiked);
-      })
-      .catch((error) => console.error('Error upvoting post:', error));
-  };
-
-  const handleCommentSubmit = () => {
-    if (commentInput.trim()) {
-      axios
-        .post(
-          `http://127.0.0.1:7070/api/posts/${postId}/comments`,
-          { content: commentInput },
-          { withCredentials: true }
-        )
-        .then((response) => {
-          // Assuming response.data contains the new comment object
-          const newComment = response.data;
-          setComments((prevComments) => [...prevComments, newComment]);
-          setCommentInput('');
-        })
-        .catch((error) => console.error('Error posting comment:', error));
+      } else {
+        console.error('Error upvoting post:', response.body.error);
+      }
+    } catch (error) {
+      console.error('Error upvoting post:', error);
     }
   };
 
-  const handleDeleteComment = () => {
+  const handleCommentSubmit = async () => {
+    if (commentInput.trim()) {
+      try {
+        const response = await api.post(`/posts/${postId}/comments`, {
+          content: commentInput,
+        });
+        if (response.ok) {
+          const newComment = response.body;
+          setComments((prevComments) => [...prevComments, newComment]);
+          setCommentInput('');
+        } else {
+          console.error('Error posting comment:', response.body.error);
+        }
+      } catch (error) {
+        console.error('Error posting comment:', error);
+      }
+    }
+  };
+
+  const handleDeleteComment = async () => {
     if (selectedComment) {
-      axios
-        .delete(
-          `http://127.0.0.1:7070/api/comments/${selectedComment.id}/delete`,
-          { withCredentials: true }
-        )
-        .then(() => {
+      try {
+        const response = await api.delete(`/comments/${selectedComment.id}/delete`);
+        if (response.ok) {
           setComments((prevComments) =>
             prevComments.filter((comment) => comment.id !== selectedComment.id)
           );
           setCommentDialogOpen(false);
           setSelectedComment(null);
-        })
-        .catch((error) => console.error('Error deleting comment:', error));
+        } else {
+          console.error('Error deleting comment:', response.body.error);
+        }
+      } catch (error) {
+        console.error('Error deleting comment:', error);
+      }
     }
   };
 
-  const handleEditComment = () => {
+  const handleEditComment = async () => {
     if (selectedComment && editCommentContent.trim()) {
-      axios
-        .put(
-          `http://127.0.0.1:7070/api/comments/${selectedComment.id}/edit`,
-          { content: editCommentContent },
-          { withCredentials: true }
-        )
-        .then((response) => {
-          const updatedComment = response.data.comment;
+      try {
+        const response = await api.put(`/comments/${selectedComment.id}/edit`, {
+          content: editCommentContent,
+        });
+        if (response.ok) {
+          const updatedComment = response.body.comment;
           setComments((prevComments) =>
             prevComments.map((comment) =>
               comment.id === updatedComment.id ? updatedComment : comment
@@ -147,23 +151,29 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
           );
           setCommentEditDialogOpen(false);
           setSelectedComment(null);
-        })
-        .catch((error) => console.error('Error editing comment:', error));
+        } else {
+          console.error('Error editing comment:', response.body.error);
+        }
+      } catch (error) {
+        console.error('Error editing comment:', error);
+      }
     }
   };
 
-  const handleDeletePost = () => {
-    axios
-      .delete(`http://127.0.0.1:7070/api/posts/${postId}/delete`, {
-        withCredentials: true,
-      })
-      .then(() => {
+  const handleDeletePost = async () => {
+    try {
+      const response = await api.delete(`/posts/${postId}/delete`);
+      if (response.ok) {
         setPostDialogOpen(false);
         if (onDelete) {
           onDelete(postId);
         }
-      })
-      .catch((error) => console.error('Error deleting post:', error));
+      } else {
+        console.error('Error deleting post:', response.body.error);
+      }
+    } catch (error) {
+      console.error('Error deleting post:', error);
+    }
   };
 
   const handleOpenPostMenu = (event) => {
@@ -202,7 +212,7 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
     setSelectedComment(null);
   };
 
-  const handleOpenEditDialog = () => {
+  const handleOpenEditDialog = async () => {
     setEditTitle(postData.title);
     setEditContent(postData.content);
     setEditType(postData.type);
@@ -210,13 +220,18 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
     setEditTags(postData.tags || []);
     setEditDialogOpen(true);
     handleClosePostMenu();
-  
+
     // Fetch available tags from the server
-    axios.get('http://127.0.0.1:7070/api/tags', { withCredentials: true })
-    .then((res) => {
-      setAvailableTags(res.data);
-    })
-    .catch((err) => console.error('Error fetching tags:', err));
+    try {
+      const res = await api.get('/tags');
+      if (res.ok) {
+        setAvailableTags(res.body);
+      } else {
+        console.error('Error fetching tags:', res.body.error);
+      }
+    } catch (err) {
+      console.error('Error fetching tags:', err);
+    }
   };
 
   const handleCloseEditDialog = () => {
@@ -234,27 +249,28 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
     setSelectedComment(null);
   };
 
-  const handleEditPost = () => {
-    axios.put(
-      `http://127.0.0.1:7070/api/posts/${postId}/edit`,
-      {
+  const handleEditPost = async () => {
+    try {
+      const response = await api.put(`/posts/${postId}/edit`, {
         title: editTitle,
         content: editContent,
         type: editType,
         credits: editCredits,
         tags: editTags,
-      },
-      { withCredentials: true }
-    )
-    .then((response) => {
-      const updatedPost = response.data.post;
-      setPostData(updatedPost);
-      handleCloseEditDialog();
-      if (refreshPosts) {
-        refreshPosts();
+      });
+      if (response.ok) {
+        const updatedPost = response.body.post;
+        setPostData(updatedPost);
+        handleCloseEditDialog();
+        if (refreshPosts) {
+          refreshPosts();
+        }
+      } else {
+        console.error('Error updating post:', response.body.error);
       }
-    })
-    .catch((error) => console.error('Error updating post:', error));
+    } catch (error) {
+      console.error('Error updating post:', error);
+    }
   };
 
   if (!postData || !user) return <div>Loading...</div>;

@@ -51,7 +51,11 @@ def add_post():
         for user_skill in matching_skills:
             profile_owner = user_skill.nuser
             # Skip sending email if profile_owner is the post's author
-            if profile_owner.email and profile_owner.id not in notified_users and profile_owner.id != current_user.id:
+            if (
+                profile_owner.email
+                and profile_owner.id not in notified_users
+                and profile_owner.id != current_user.id
+            ):
                 notified_users.add(profile_owner.id)
                 try:
                     send_email(

@@ -58,7 +58,7 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
     const fetchPostData = async () => {
       try {
         // Fetch the post data
-        const response = await api.get(`/posts/${postId}`);
+        const response = await api.get(`/posts/${postId}`, { withCredentials: true });
         if (response.ok) {
           const post = response.body;
           setPostData(post);
@@ -66,7 +66,7 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
           setUpvotes(post.likes);
 
           // Check if the user has liked the post
-          const res = await api.get(`/posts/${postId}/has_liked`);
+          const res = await api.get(`/posts/${postId}/has_liked`, { withCredentials: true });
           if (res.ok) {
             setHasLiked(res.body.hasLiked);
           } else {
@@ -85,7 +85,7 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
 
   const handleUpvote = async () => {
     try {
-      const response = await api.post(`/posts/${postId}/like`, {});
+      const response = await api.post(`/posts/${postId}/like`, { withCredentials: true });
       if (response.ok) {
         const { likes, hasLiked } = response.body;
         setUpvotes(likes);
@@ -103,7 +103,7 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
       try {
         const response = await api.post(`/posts/${postId}/comments`, {
           content: commentInput,
-        });
+        }, { withCredentials: true });
         if (response.ok) {
           const newComment = response.body;
           setComments((prevComments) => [...prevComments, newComment]);
@@ -120,7 +120,7 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
   const handleDeleteComment = async () => {
     if (selectedComment) {
       try {
-        const response = await api.delete(`/comments/${selectedComment.id}/delete`);
+        const response = await api.delete(`/comments/${selectedComment.id}/delete`, { withCredentials: true });
         if (response.ok) {
           setComments((prevComments) =>
             prevComments.filter((comment) => comment.id !== selectedComment.id)
@@ -141,7 +141,7 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
       try {
         const response = await api.put(`/comments/${selectedComment.id}/edit`, {
           content: editCommentContent,
-        });
+        }, { withCredentials: true });
         if (response.ok) {
           const updatedComment = response.body.comment;
           setComments((prevComments) =>
@@ -162,7 +162,7 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
 
   const handleDeletePost = async () => {
     try {
-      const response = await api.delete(`/posts/${postId}/delete`);
+      const response = await api.delete(`/posts/${postId}/delete`, { withCredentials: true });
       if (response.ok) {
         setPostDialogOpen(false);
         if (onDelete) {
@@ -223,7 +223,7 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
 
     // Fetch available tags from the server
     try {
-      const res = await api.get('/tags');
+      const res = await api.get('/tags', { withCredentials: true });
       if (res.ok) {
         setAvailableTags(res.body);
       } else {
@@ -257,7 +257,7 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
         type: editType,
         credits: editCredits,
         tags: editTags,
-      });
+      }, { withCredentials: true });
       if (response.ok) {
         const updatedPost = response.body.post;
         setPostData(updatedPost);

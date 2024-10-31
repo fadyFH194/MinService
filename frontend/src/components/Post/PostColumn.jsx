@@ -10,7 +10,7 @@ const PostColumn = () => {
 
   const fetchPosts = async () => {
     try {
-      const response = await api.get('/posts');
+      const response = await api.get('/posts', { withCredentials: true });
       if (response.ok) {
         setPosts(response.body); // Use the order as returned by the backend
       } else {

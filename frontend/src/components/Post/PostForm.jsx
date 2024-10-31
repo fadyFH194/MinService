@@ -14,7 +14,7 @@ const PostForm = ({ onAddPost }) => {
   useEffect(() => {
     const fetchTags = async () => {
       try {
-        const response = await api.get('/tags');
+        const response = await api.get('/tags', { withCredentials: true });
         if (response.ok) {
           setAvailableTags(response.body);
         } else {
@@ -45,7 +45,7 @@ const PostForm = ({ onAddPost }) => {
     };
 
     try {
-      const response = await api.post('/posts', newPost);
+      const response = await api.post('/posts', newPost, { withCredentials: true });
       if (response.ok) {
         onAddPost(response.body.post);
         // Clear the form after successful submission

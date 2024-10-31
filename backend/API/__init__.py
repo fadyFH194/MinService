@@ -24,21 +24,22 @@ def create_app(test_config=None):
 
     logging.basicConfig(level=logging.DEBUG)
     app.logger.setLevel(logging.DEBUG)
-
-    CORS(
-        app,
-        resources={
-            r"/api/*": {
-                "origins": "*",
-                "methods": ["GET", "POST", "PUT", "DELETE"],
-            }
-        },
-        supports_credentials=True,
-    )
     app.register_blueprint(auth_bp, url_prefix="/api")
     app.register_blueprint(userdata_bp, url_prefix="/api")
     app.register_blueprint(admin_bp, url_prefix="/api")
     app.register_blueprint(posts_bp, url_prefix="/api")
+    
+    CORS(
+        app,
+        resources={
+            r"/api/*": {
+                "origins": ["https://minservice-94bfa.web.app"],
+                "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+                "allow_headers": ["Authorization", "Content-Type"],
+            }
+        },
+        supports_credentials=True,
+    )
 
     app.config.from_mapping(
         SQLALCHEMY_DATABASE_URI=os.environ.get("DATABASE_URL"),

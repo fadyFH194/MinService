@@ -28,7 +28,7 @@ def create_app(test_config=None):
     app.register_blueprint(userdata_bp, url_prefix="/api")
     app.register_blueprint(admin_bp, url_prefix="/api")
     app.register_blueprint(posts_bp, url_prefix="/api")
-    
+
     CORS(
         app,
         resources={

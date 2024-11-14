@@ -71,8 +71,12 @@ class Comment(db.Model):
     __tablename__ = "comments"
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
-    post_id = db.Column(db.Integer, db.ForeignKey("posts.id"), nullable=False)
-    author_id = db.Column(db.String, db.ForeignKey("nusers.id"), nullable=False)
+    post_id = db.Column(
+        db.Integer, db.ForeignKey("posts.id", ondelete="CASCADE"), nullable=False
+    )
+    author_id = db.Column(
+        db.String(100), db.ForeignKey("nusers.id", ondelete="CASCADE"), nullable=False
+    )
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)  # Add timestamp field
 
     # Relationship with NUsers (author)
@@ -82,8 +86,12 @@ class Comment(db.Model):
 class PostLikes(db.Model):
     __tablename__ = "post_likes"
     id = db.Column(db.Integer, primary_key=True)
-    post_id = db.Column(db.Integer, db.ForeignKey("posts.id"), nullable=False)
-    user_id = db.Column(db.String, db.ForeignKey("nusers.id"), nullable=False)
+    post_id = db.Column(
+        db.Integer, db.ForeignKey("posts.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id = db.Column(
+        db.String(100), db.ForeignKey("nusers.id", ondelete="CASCADE"), nullable=False
+    )
 
     post = db.relationship("Post", backref="post_likes", lazy=True)
     user = db.relationship("NUsers", backref="user_likes", lazy=True)

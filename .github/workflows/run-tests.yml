@@ -25,6 +25,7 @@ jobs:
         source myenv/bin/activate
         pip install --upgrade pip
         pip install -r backend/requirements.txt
+        pip install pytest
 
     - name: Set PYTHONPATH and run tests
       run: |

@@ -19,16 +19,20 @@ jobs:
       with:
         python-version: '3.8'
 
-    - name: Install dependencies
+    - name: Install dependencies and run tests
       run: |
+        # Create and activate the virtual environment
         python -m venv myenv
         source myenv/bin/activate
+
+        # Install dependencies
         pip install --upgrade pip
         pip install -r backend/requirements.txt
-        pip install pytest
 
-    - name: Set PYTHONPATH and run tests
-      run: |
+        # Add the backend directory to PYTHONPATH
         cd backend
         export PYTHONPATH=$(pwd)
+
+        # Run the tests
         pytest -vv --tb=short tests/unit
+      shell: bash

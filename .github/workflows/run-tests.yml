@@ -1,4 +1,4 @@
-name: Run Backend Tests
+name: CI Test Workflow
 
 on:
   push:
@@ -11,28 +11,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
+    - name: Checkout code
       uses: actions/checkout@v3
 
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.8'
+        python-version: 3.8
 
-    - name: Install dependencies and run tests
+    - name: Install Dependencies
       run: |
-        # Create and activate the virtual environment
         python -m venv myenv
         source myenv/bin/activate
-
-        # Install dependencies
         pip install --upgrade pip
         pip install -r backend/requirements.txt
 
-        # Add the backend directory to PYTHONPATH
+    - name: Run Backend Tests
+      env:
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}  # Access the secret here
+      run: |
+        source myenv/bin/activate
         cd backend
         export PYTHONPATH=$(pwd)
-
-        # Run the tests
         pytest -vv --tb=short tests/unit
-      shell: bash

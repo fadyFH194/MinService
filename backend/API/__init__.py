@@ -33,7 +33,10 @@ def create_app(test_config=None):
         app,
         resources={
             r"/api/*": {
-                "origins": ["https://minservice-94bfa.web.app", "http://localhost:5173"],
+                "origins": [
+                    "https://minservice-94bfa.web.app",
+                    "http://localhost:5173",
+                ],
                 "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
                 "allow_headers": ["Authorization", "Content-Type"],
             }

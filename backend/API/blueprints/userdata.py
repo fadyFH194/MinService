@@ -46,8 +46,14 @@ def create_or_update_nuser():
             # Update existing user fields...
             nuser.name = name or nuser.name
             nuser.about = about if about is not None else nuser.about
-            nuser.class_batch = class_batch if class_batch is not None else nuser.class_batch
-            nuser.current_location = current_location if current_location is not None else nuser.current_location
+            nuser.class_batch = (
+                class_batch if class_batch is not None else nuser.class_batch
+            )
+            nuser.current_location = (
+                current_location
+                if current_location is not None
+                else nuser.current_location
+            )
             nuser.telegram = telegram if telegram is not None else nuser.telegram
             nuser.whatsapp = whatsapp if whatsapp is not None else nuser.whatsapp
             nuser.phone = phone if phone is not None else nuser.phone

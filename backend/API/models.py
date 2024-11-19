@@ -16,7 +16,9 @@ class NUsers(db.Model, UserMixin):
     __tablename__ = "nusers"
     id = db.Column(db.String, primary_key=True)
     name = db.Column(db.String(100))
-    email = db.Column(db.String(120), unique=True, nullable=False)  # Email retrieved directly
+    email = db.Column(
+        db.String(120), unique=True, nullable=False
+    )  # Email retrieved directly
     picture = db.Column(db.String(255))  # Profile picture URL
     about = db.Column(db.String(255))
     class_batch = db.Column(db.String(100))
@@ -24,7 +26,7 @@ class NUsers(db.Model, UserMixin):
     telegram = db.Column(db.String(100))  # New field for Telegram
     whatsapp = db.Column(db.String(100))  # New field for WhatsApp
     phone = db.Column(db.String(20))  # New field for Phone
-    
+
     skills = db.relationship("UserSkills", backref="nuser", lazy=True)
     role_id = db.Column(db.Integer, db.ForeignKey("roles.id"), nullable=False)
     role = db.relationship("Roles", backref="nusers", lazy=True)
@@ -40,24 +42,25 @@ class NUsers(db.Model, UserMixin):
 class UserCredits(db.Model):
     __tablename__ = "user_credits"
     id = db.Column(db.Integer, primary_key=True)
-    nuser_id = db.Column(db.String, db.ForeignKey("nusers.id"), nullable=False, unique=True)
+    nuser_id = db.Column(
+        db.String, db.ForeignKey("nusers.id"), nullable=False, unique=True
+    )
     credits = db.Column(db.Integer, default=5)
 
     nuser = db.relationship("NUsers", back_populates="user_credits")
-    
-    
+
+
 # Set up logging
 logging.basicConfig()
 logger = logging.getLogger(__name__)
-    
-    
-@event.listens_for(NUsers, 'after_insert')
+
+
+@event.listens_for(NUsers, "after_insert")
 def create_user_credits(mapper, connection, target):
     logger.info(f"Creating UserCredits for new user with ID {target.id}")
     # Correctly pass parameters as a dictionary
     connection.execute(
-        UserCredits.__table__.insert(),
-        {'nuser_id': target.id, 'credits': 5}
+        UserCredits.__table__.insert(), {"nuser_id": target.id, "credits": 5}
     )
 
 

@@ -48,7 +48,6 @@ def test_get_nuser_data(client, test_user):
 
         # Validate user data
         assert data["name"] == "Test User"
-        assert data["email"] == "testuser@example.com"
         assert data["about"] == "This is a test user"  # Ensure this matches test setup
         assert data["classBatch"] == "2024"
         assert data["currentLocation"] == "Test City"

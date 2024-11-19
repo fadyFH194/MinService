@@ -64,56 +64,28 @@ export default function NUserFormPage() {
     about: "",
     classBatch: "",
     currentLocation: "",
+    telegram: "",
+    whatsapp: "",
+    phone: "",
     skills: [],
   });
-
-  const [formErrors, setFormErrors] = useState({});
 
   const api = useApi();
 
   useEffect(() => {
     if (isUpdateMode) {
-      // Fetch user data from backend if not provided
-      if (!userData) {
-        api
-          .get("/nusers-view")
-          .then((response) => {
-            if (response.status === 200) {
-              setFormData({
-                name: response.data.name || "",
-                about: response.data.about || "",
-                classBatch: response.data.classBatch || "",
-                currentLocation: response.data.currentLocation || "",
-                skills: response.data.skills || [],
-              });
-            } else {
-              console.error("Failed to load user data");
-            }
-          })
-          .catch((error) => {
-            console.error("Error fetching user data", error);
-          });
-      } else {
-        setFormData({
-          name: userData.name || "",
-          about: userData.about || "",
-          classBatch: userData.classBatch || "",
-          currentLocation: userData.currentLocation || "",
-          skills: userData.skills || [],
-        });
+      if (userData) {
+        setFormData({ ...userData });
       }
     }
-  }, [userData, isUpdateMode, api]);
+  }, [userData, isUpdateMode]);
 
-  // Adjusted handleChange function
   const handleChange = (name, value) => {
     setFormData({ ...formData, [name]: value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // You can add form validation here if needed
-
     const endpoint = "/nusers-data";
     const method = isUpdateMode ? "put" : "post";
 
@@ -122,10 +94,10 @@ export default function NUserFormPage() {
       if (response.status === 200 || response.status === 201) {
         navigate("/");
       } else {
-        console.log("Operation failed with status:", response.status);
+        console.error("Operation failed with status:", response.status);
       }
     } catch (error) {
-      console.error("Error submitting form", error);
+      console.error("Error submitting form:", error);
     }
   };
 
@@ -142,7 +114,7 @@ export default function NUserFormPage() {
             name="name"
             style={formControlStyle}
             value={formData.name}
-            onChange={(event) => handleChange(event.target.name, event.target.value)}
+            onChange={(e) => handleChange(e.target.name, e.target.value)}
             required
           />
           <TextField
@@ -150,7 +122,7 @@ export default function NUserFormPage() {
             name="about"
             style={formControlStyle}
             value={formData.about}
-            onChange={(event) => handleChange(event.target.name, event.target.value)}
+            onChange={(e) => handleChange(e.target.name, e.target.value)}
             multiline
             rows={4}
           />
@@ -158,11 +130,9 @@ export default function NUserFormPage() {
             <InputLabel id="class-batch-label">Class Batch</InputLabel>
             <Select
               labelId="class-batch-label"
-              id="class-batch"
-              name="classBatch" // Ensure name attribute is set
+              name="classBatch"
               value={formData.classBatch}
-              onChange={(event) => handleChange(event.target.name, event.target.value)}
-              label="Class Batch"
+              onChange={(e) => handleChange(e.target.name, e.target.value)}
             >
               <MenuItem value="M25">M25</MenuItem>
               <MenuItem value="M26">M26</MenuItem>
@@ -175,9 +145,8 @@ export default function NUserFormPage() {
             name="currentLocation"
             style={formControlStyle}
             value={formData.currentLocation}
-            onChange={(event) => handleChange(event.target.name, event.target.value)}
+            onChange={(e) => handleChange(e.target.name, e.target.value)}
           />
-
           <Autocomplete
             multiple
             options={skillsData}
@@ -186,7 +155,7 @@ export default function NUserFormPage() {
             onChange={(event, newValue) => handleChange("skills", newValue)}
             renderTags={(value, getTagProps) =>
               value.map((option, index) => (
-                <Chip variant="outlined" label={option} {...getTagProps({ index })} />
+                <Chip key={index} variant="outlined" label={option} {...getTagProps({ index })} />
               ))
             }
             renderInput={(params) => (
@@ -194,7 +163,30 @@ export default function NUserFormPage() {
             )}
             style={formControlStyle}
           />
-          <Divider style={{ marginTop: "16px", marginBottom: "16px" }} />
+          <Typography variant="h6" style={{ marginTop: '16px' }}>
+            Contact Info          </Typography>
+          <Divider style={{ marginBottom: '16px' }} />
+          <TextField
+            label="Telegram"
+            name="telegram"
+            style={formControlStyle}
+            value={formData.telegram}
+            onChange={(e) => handleChange(e.target.name, e.target.value)}
+          />
+          <TextField
+            label="WhatsApp"
+            name="whatsapp"
+            style={formControlStyle}
+            value={formData.whatsapp}
+            onChange={(e) => handleChange(e.target.name, e.target.value)}
+          />
+          <TextField
+            label="Phone"
+            name="phone"
+            style={formControlStyle}
+            value={formData.phone}
+            onChange={(e) => handleChange(e.target.name, e.target.value)}
+          />
           <Button type="submit" variant="contained" style={submitButtonStyle}>
             {isUpdateMode ? "Update Profile" : "Create Profile"}
           </Button>

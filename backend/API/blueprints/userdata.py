@@ -119,3 +119,36 @@ def get_nuser_data():
         db.session.rollback()
         current_app.logger.error(f"Error in get_nuser_data: {e}", exc_info=True)
         return jsonify({"error": "Database error"}), 500
+
+
+@userdata_bp.route("/search/users", methods=["GET"])
+@login_required
+def search_users():
+    query = request.args.get("q", "").strip()
+    if not query:
+        return jsonify({"error": "No search query provided"}), 400
+
+    try:
+        # Match users whose names start with the search query
+        users = NUsers.query.filter(NUsers.name.ilike(f"{query}%")).all()
+
+        results = [
+            {
+                "id": user.id,
+                "name": user.name,
+                "email": user.email,
+                "picture": user.picture,
+                "about": user.about,
+                "classBatch": user.class_batch,
+                "currentLocation": user.current_location,
+                "telegram": user.telegram,
+                "whatsapp": user.whatsapp,
+                "phone": user.phone,
+                "skills": [skill.skill for skill in user.skills],
+            }
+            for user in users
+        ]
+        return jsonify(results), 200
+    except Exception as e:
+        current_app.logger.error(f"Error searching users: {e}")
+        return jsonify({"error": "Internal server error"}), 500

@@ -63,7 +63,7 @@ def add_post():
                         subject=f"New Request for Help on MinService",
                         message=f"Hello {profile_owner.name},\n\n"
                         f"{current_user.name} asked for help with task '{new_post.title}' that is {new_post.type}, and based on your profile, you might be able to help.\n"
-                        f"Check it out on MinService.\n\n"
+                        f"Check it out on MinService: https://minservice-94bfa.web.app/\n\n"
                         f"Best regards,\nMinService",
                     )
                 except Exception as e:
@@ -417,3 +417,57 @@ def get_tags():
         return jsonify(skill_tags), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@posts_bp.route("/search/posts", methods=["GET"])
+def search_posts():
+    try:
+        # Get the tag queries from the request (comma-separated values)
+        tag_query = request.args.get("tags", "").strip()
+        if not tag_query:
+            return jsonify({"error": "No tags provided"}), 400
+
+        # Split the tag query into a list of tags
+        tag_names = [tag.strip() for tag in tag_query.split(",") if tag.strip()]
+
+        if not tag_names:
+            return jsonify({"error": "No valid tags provided"}), 400
+
+        # Query for tags that match the names
+        tags = Tag.query.filter(Tag.name.in_(tag_names)).all()
+
+        if not tags:
+            return jsonify({"message": "No posts found for the given tags"}), 404
+
+        # Collect posts from all matched tags
+        posts = set()
+        for tag in tags:
+            posts.update(tag.posts)
+
+        posts_data = [
+            {
+                "id": post.id,
+                "type": post.type,
+                "credits": post.credits,
+                "title": post.title,
+                "content": post.content,
+                "likes": PostLikes.query.filter_by(post_id=post.id).count(),
+                "comments": [
+                    {"id": comment.id, "content": comment.content}
+                    for comment in post.comments
+                ],
+                "author": post.author.name,
+                "author_id": post.author_id,
+                "author_picture": post.author.picture if post.author.picture else None,
+                "date": post.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+                if post.timestamp
+                else "Unknown",
+                "tags": [tag.name for tag in post.tags],
+            }
+            for post in sorted(posts, key=lambda p: p.timestamp, reverse=True)
+        ]
+
+        return jsonify(posts_data), 200
+    except Exception as e:
+        current_app.logger.error(f"Error searching posts by tags: {e}")
+        return jsonify({"error": "Internal server error"}), 500

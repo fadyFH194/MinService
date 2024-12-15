@@ -67,22 +67,24 @@ function Navbar() {
           </Box>
 
           {/* Search Button */}
-          <Button
-            onClick={() => setIsSearchWindowOpen(true)}
-            variant="text"
-            sx={{
-              fontSize: "16px",
-              color: "white",
-              backgroundColor: "rgba(255, 255, 255, 0.2)",
-              borderRadius: "20px",
-              padding: "10px 300px",
-              "&:hover": {
-                backgroundColor: "rgba(255, 255, 255, 0.3)",
-              },
-            }}
-          >
-            Search
-          </Button>
+          {isAuthenticated && (
+            <Button
+              onClick={() => setIsSearchWindowOpen(true)}
+              variant="text"
+              sx={{
+                fontSize: "16px",
+                color: "white",
+                backgroundColor: "rgba(255, 255, 255, 0.2)",
+                borderRadius: "20px",
+                padding: "10px 300px",
+                "&:hover": {
+                  backgroundColor: "rgba(255, 255, 255, 0.3)",
+                },
+              }}
+            >
+              Search
+            </Button>
+          )}
 
           {/* User Menu */}
           {isAuthenticated && (

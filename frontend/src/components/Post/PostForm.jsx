@@ -132,7 +132,7 @@ const PostForm = ({ onAddPost }) => {
           fullWidth
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          sx={{ marginTop: 2 }}
+          sx={{ mt: 2 }}
         />
 
         {/* Post Content Field */}
@@ -143,7 +143,7 @@ const PostForm = ({ onAddPost }) => {
           rows={4}
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          sx={{ marginTop: 2 }}
+          sx={{ mt: 2 }}
         />
 
         {/* Tags Autocomplete */}
@@ -167,11 +167,11 @@ const PostForm = ({ onAddPost }) => {
               placeholder="Add or select tags" 
             />
           )}
-          sx={{ marginTop: 2 }}
+          sx={{ mt: 2 }}
         />
 
         {/* Submit Button */}
-        <Button type="submit" variant="contained" sx={{ marginTop: 2 }}>
+        <Button type="submit" variant="contained" sx={{ mt: 2 }}>
           Add Post
         </Button>
       </form>

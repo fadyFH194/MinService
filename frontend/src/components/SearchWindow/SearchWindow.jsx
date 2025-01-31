@@ -14,8 +14,8 @@ import {
   Grid,
   Button,
   Chip,
-  Link,
-  SvgIcon,
+  Link, // Import Link component from MUI
+  SvgIcon, // Import SvgIcon for custom icons
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { styled } from "@mui/material/styles";
@@ -392,7 +392,14 @@ function SearchWindow({ closeSearchWindow }) {
             Search
           </Typography>
           {/* Search Input and Toggle */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              flexWrap: "wrap",
+            }}
+          >
             {searchType === "users" ? (
               <TextField
                 label={`Search ${searchType}`}
@@ -413,7 +420,14 @@ function SearchWindow({ closeSearchWindow }) {
                 renderTags={(value, getTagProps) =>
                   value.map((option, index) => {
                     const { key, ...tagProps } = getTagProps({ index });
-                    return <Chip key={key} variant="outlined" label={option} {...tagProps} />;
+                    return (
+                      <Chip
+                        key={key}
+                        variant="outlined"
+                        label={option}
+                        {...tagProps}
+                      />
+                    );
                   })
                 }
                 renderInput={(params) => (

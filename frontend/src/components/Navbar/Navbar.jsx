@@ -104,7 +104,11 @@ function Navbar() {
                   alt={"User's Picture"}
                   src={user.picture}
                   onClick={handleAvatarClick}
-                  sx={{ cursor: "pointer", width: { xs: 32, sm: 40 }, height: { xs: 32, sm: 40 } }}
+                  sx={{
+                    cursor: "pointer",
+                    width: { xs: 32, sm: 40 },
+                    height: { xs: 32, sm: 40 },
+                  }}
                 />
               </Tooltip>
               <Menu
@@ -140,8 +144,9 @@ function Navbar() {
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            zIndex: 1000,
-            p: 2, // Padding for smaller screens
+            zIndex: 1300, // Ensure this overlay is on top of everything
+            p: 2,
+            pointerEvents: "auto", // Ensure pointer events are enabled
           }}
         >
           <NViewUserProfile
@@ -163,8 +168,9 @@ function Navbar() {
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            zIndex: 1000,
-            p: 2, // Padding for smaller screens
+            zIndex: 1300, // Ensure this overlay is on top of everything
+            p: 2,
+            pointerEvents: "auto", // Ensure pointer events are enabled
           }}
         >
           <SearchWindow closeSearchWindow={() => setIsSearchWindowOpen(false)} />

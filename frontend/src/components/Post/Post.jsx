@@ -34,6 +34,7 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
   const { user } = useAuth();
   const api = useApi();
 
+  // States for post data and UI controls
   const [postData, setPostData] = useState(null);
   const [upvotes, setUpvotes] = useState(0);
   const [hasLiked, setHasLiked] = useState(false);
@@ -296,7 +297,7 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
         position: 'relative',
         maxWidth: { xs: '90%', sm: 600 },
         width: '100%',
-        margin: { xs: '10px auto', sm: '20px auto' },
+        m: { xs: '10px auto', sm: '20px auto' },
         boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.1)',
         border: '1px solid rgba(0, 0, 0, 0.12)',
         borderRadius: '8px',
@@ -379,12 +380,12 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
             </Typography>
           </Grid>
         </Grid>
-        <Typography variant="body1" sx={{ marginTop: 2 }}>
+        <Typography variant="body1" sx={{ mt: 2 }}>
           {postData.content}
         </Typography>
 
         {/* Display Tags Here */}
-        <Grid container spacing={1} sx={{ marginTop: 2 }}>
+        <Grid container spacing={1} sx={{ mt: 2 }}>
           {postData.tags?.map((tag, index) => (
             <Grid item key={index}>
               <Chip label={tag} size="small" />
@@ -396,7 +397,7 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
       <CardActions disableSpacing>
         <IconButton onClick={handleUpvote} aria-label="upvote">
           {hasLiked ? <ThumbUpAltIcon /> : <ThumbUpOffAltIcon />}
-          <Typography sx={{ marginLeft: '8px' }}>{upvotes}</Typography>
+          <Typography sx={{ ml: '8px' }}>{upvotes}</Typography>
         </IconButton>
       </CardActions>
 
@@ -407,7 +408,7 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
           value={commentInput}
           onChange={(e) => setCommentInput(e.target.value)}
           variant="outlined"
-          sx={{ marginBottom: { xs: '8px', sm: '16px' } }}
+          sx={{ mb: { xs: '8px', sm: '16px' } }}
         />
         <Button
           variant="contained"
@@ -422,7 +423,7 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
             container
             alignItems="center"
             key={comment.id}
-            sx={{ marginTop: { xs: '8px', sm: '16px' } }}
+            sx={{ mt: { xs: '8px', sm: '16px' } }}
           >
             <Grid item>
               <Avatar
@@ -431,18 +432,14 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
                 sx={{ width: { xs: 24, sm: 30 }, height: { xs: 24, sm: 30 } }}
               />
             </Grid>
-            <Grid item xs sx={{ marginLeft: 1 }}>
+            <Grid item xs sx={{ ml: 1 }}>
               <Typography variant="body2">
                 <strong>{comment.author}</strong>
-                <Typography
-                  variant="caption"
-                  color="textSecondary"
-                  sx={{ marginLeft: 1 }}
-                >
+                <Typography variant="caption" color="textSecondary" sx={{ ml: 1 }}>
                   {comment.timestamp}
                 </Typography>
               </Typography>
-              <Typography variant="body1" sx={{ marginTop: 0.5 }}>
+              <Typography variant="body1" sx={{ mt: 0.5 }}>
                 {comment.content}
               </Typography>
             </Grid>

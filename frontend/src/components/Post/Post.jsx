@@ -28,11 +28,11 @@ import StarIcon from '@mui/icons-material/Star';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Autocomplete from '@mui/material/Autocomplete';
 import { useAuth } from '../../contexts/AuthProvider';
-import { useApi } from '../../contexts/ApiProvider'; // Import useApi
+import { useApi } from '../../contexts/ApiProvider';
 
 const Post = ({ postId, onDelete, refreshPosts }) => {
   const { user } = useAuth();
-  const api = useApi(); // Initialize the API context
+  const api = useApi();
 
   const [postData, setPostData] = useState(null);
   const [upvotes, setUpvotes] = useState(0);
@@ -101,9 +101,11 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
   const handleCommentSubmit = async () => {
     if (commentInput.trim()) {
       try {
-        const response = await api.post(`/posts/${postId}/comments`, {
-          content: commentInput,
-        }, { withCredentials: true });
+        const response = await api.post(
+          `/posts/${postId}/comments`,
+          { content: commentInput },
+          { withCredentials: true }
+        );
         if (response.ok) {
           const newComment = response.body;
           setComments((prevComments) => [...prevComments, newComment]);
@@ -120,7 +122,10 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
   const handleDeleteComment = async () => {
     if (selectedComment) {
       try {
-        const response = await api.delete(`/comments/${selectedComment.id}/delete`, { withCredentials: true });
+        const response = await api.delete(
+          `/comments/${selectedComment.id}/delete`,
+          { withCredentials: true }
+        );
         if (response.ok) {
           setComments((prevComments) =>
             prevComments.filter((comment) => comment.id !== selectedComment.id)
@@ -139,9 +144,11 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
   const handleEditComment = async () => {
     if (selectedComment && editCommentContent.trim()) {
       try {
-        const response = await api.put(`/comments/${selectedComment.id}/edit`, {
-          content: editCommentContent,
-        }, { withCredentials: true });
+        const response = await api.put(
+          `/comments/${selectedComment.id}/edit`,
+          { content: editCommentContent },
+          { withCredentials: true }
+        );
         if (response.ok) {
           const updatedComment = response.body.comment;
           setComments((prevComments) =>
@@ -251,13 +258,17 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
 
   const handleEditPost = async () => {
     try {
-      const response = await api.put(`/posts/${postId}/edit`, {
-        title: editTitle,
-        content: editContent,
-        type: editType,
-        credits: editCredits,
-        tags: editTags,
-      }, { withCredentials: true });
+      const response = await api.put(
+        `/posts/${postId}/edit`,
+        {
+          title: editTitle,
+          content: editContent,
+          type: editType,
+          credits: editCredits,
+          tags: editTags,
+        },
+        { withCredentials: true }
+      );
       if (response.ok) {
         const updatedPost = response.body.post;
         setPostData(updatedPost);
@@ -283,9 +294,9 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
     <Card
       sx={{
         position: 'relative',
-        maxWidth: 600,
+        maxWidth: { xs: '90%', sm: 600 },
         width: '100%',
-        margin: '20px auto',
+        margin: { xs: '10px auto', sm: '20px auto' },
         boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.1)',
         border: '1px solid rgba(0, 0, 0, 0.12)',
         borderRadius: '8px',
@@ -299,7 +310,12 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
         label={postData.type.charAt(0).toUpperCase() + postData.type.slice(1)}
         color="primary"
         size="small"
-        sx={{ position: 'absolute', top: 16, right: 50, zIndex: 1 }}
+        sx={{
+          position: 'absolute',
+          top: { xs: 12, sm: 16 },
+          right: { xs: 30, sm: 50 },
+          zIndex: 1,
+        }}
       />
 
       {/* Credits Indicator */}
@@ -307,7 +323,12 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
         icon={<StarIcon />}
         label={`${postData.credits}`}
         size="small"
-        sx={{ position: 'absolute', top: 16, right: 130, zIndex: 1 }}
+        sx={{
+          position: 'absolute',
+          top: { xs: 12, sm: 16 },
+          right: { xs: 100, sm: 130 },
+          zIndex: 1,
+        }}
       />
 
       {/* Conditional rendering of the Post Menu */}
@@ -316,7 +337,12 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
           {/* Post Menu - Positioned at the top right */}
           <IconButton
             onClick={handleOpenPostMenu}
-            sx={{ position: 'absolute', top: 5, right: 5, zIndex: 2 }}
+            sx={{
+              position: 'absolute',
+              top: 5,
+              right: 5,
+              zIndex: 2,
+            }}
           >
             <MoreVertIcon />
           </IconButton>
@@ -338,12 +364,16 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
             <Avatar
               alt="Author's Picture"
               src={postData.author_picture}
-              sx={{ width: 40, height: 40 }}
+              sx={{ width: { xs: 30, sm: 40 }, height: { xs: 30, sm: 40 } }}
             />
           </Grid>
           <Grid item xs>
-            <Typography variant="h5">{postData.title}</Typography>
-            <Typography variant="subtitle2">{`By ${postData.author}`}</Typography>
+            <Typography variant="h5" sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem' } }}>
+              {postData.title}
+            </Typography>
+            <Typography variant="subtitle2">
+              {`By ${postData.author}`}
+            </Typography>
             <Typography variant="caption" color="textSecondary">
               {postData.date}
             </Typography>
@@ -377,7 +407,7 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
           value={commentInput}
           onChange={(e) => setCommentInput(e.target.value)}
           variant="outlined"
-          sx={{ marginBottom: '16px' }}
+          sx={{ marginBottom: { xs: '8px', sm: '16px' } }}
         />
         <Button
           variant="contained"
@@ -392,35 +422,33 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
             container
             alignItems="center"
             key={comment.id}
-            sx={{ marginTop: '16px' }}
+            sx={{ marginTop: { xs: '8px', sm: '16px' } }}
           >
             <Grid item>
               <Avatar
                 alt="Comment Author's Picture"
                 src={comment.author_picture}
-                sx={{ width: 30, height: 30 }}
+                sx={{ width: { xs: 24, sm: 30 }, height: { xs: 24, sm: 30 } }}
               />
             </Grid>
-            <Grid item xs sx={{ marginLeft: '10px' }}>
+            <Grid item xs sx={{ marginLeft: 1 }}>
               <Typography variant="body2">
                 <strong>{comment.author}</strong>
                 <Typography
                   variant="caption"
                   color="textSecondary"
-                  sx={{ marginLeft: '10px' }}
+                  sx={{ marginLeft: 1 }}
                 >
                   {comment.timestamp}
                 </Typography>
               </Typography>
-              <Typography variant="body1" sx={{ marginTop: '4px' }}>
+              <Typography variant="body1" sx={{ marginTop: 0.5 }}>
                 {comment.content}
               </Typography>
             </Grid>
             {String(comment.author_id) === currentUserId && (
               <Grid item>
-                <IconButton
-                  onClick={(e) => handleOpenCommentMenu(e, comment)}
-                >
+                <IconButton onClick={(e) => handleOpenCommentMenu(e, comment)}>
                   <MoreVertIcon />
                 </IconButton>
               </Grid>
@@ -477,7 +505,7 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
       </Dialog>
 
       {/* Edit Post Dialog */}
-      <Dialog open={editDialogOpen} onClose={handleCloseEditDialog}>
+      <Dialog open={editDialogOpen} onClose={handleCloseEditDialog} fullWidth maxWidth="sm">
         <DialogTitle>Edit Post</DialogTitle>
         <DialogContent>
           <TextField
@@ -525,7 +553,9 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
             onChange={(event, newValue) => {
               setEditTags(newValue);
             }}
-            renderInput={(params) => <TextField {...params} label="Tags" margin="normal" />}
+            renderInput={(params) => (
+              <TextField {...params} label="Tags" margin="normal" fullWidth />
+            )}
           />
         </DialogContent>
         <DialogActions>
@@ -539,7 +569,7 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
       </Dialog>
 
       {/* Edit Comment Dialog */}
-      <Dialog open={commentEditDialogOpen} onClose={handleCloseCommentEditDialog}>
+      <Dialog open={commentEditDialogOpen} onClose={handleCloseCommentEditDialog} fullWidth maxWidth="sm">
         <DialogTitle>Edit Comment</DialogTitle>
         <DialogContent>
           <TextField

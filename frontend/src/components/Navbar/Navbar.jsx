@@ -45,6 +45,7 @@ function Navbar() {
           sx={{
             display: "flex",
             justifyContent: "space-between",
+            flexWrap: "wrap", // Allow wrapping on smaller screens
           }}
         >
           {/* App Logo/Name */}
@@ -72,11 +73,11 @@ function Navbar() {
               onClick={() => setIsSearchWindowOpen(true)}
               variant="text"
               sx={{
-                fontSize: "16px",
+                fontSize: { xs: "14px", sm: "16px" },
                 color: "white",
                 backgroundColor: "rgba(255, 255, 255, 0.2)",
                 borderRadius: "20px",
-                padding: "10px 300px",
+                padding: { xs: "8px 16px", sm: "10px 24px", md: "10px 40px" },
                 "&:hover": {
                   backgroundColor: "rgba(255, 255, 255, 0.3)",
                 },
@@ -88,7 +89,14 @@ function Navbar() {
 
           {/* User Menu */}
           {isAuthenticated && (
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+                flexShrink: 0,
+              }}
+            >
               <Typography variant="subtitle1">{user.given_name}</Typography>
 
               <Tooltip title="View Profile">
@@ -96,7 +104,7 @@ function Navbar() {
                   alt={"User's Picture"}
                   src={user.picture}
                   onClick={handleAvatarClick}
-                  style={{ cursor: "pointer" }}
+                  sx={{ cursor: "pointer", width: { xs: 32, sm: 40 }, height: { xs: 32, sm: 40 } }}
                 />
               </Tooltip>
               <Menu
@@ -121,46 +129,46 @@ function Navbar() {
 
       {/* View User Profile Window */}
       {isNViewUserProfileOpen && (
-        <div
-          style={{
+        <Box
+          sx={{
             position: "fixed",
-            top: "0",
-            left: "0",
+            top: 0,
+            left: 0,
             width: "100%",
             height: "100%",
             backgroundColor: "rgba(0, 0, 0, 0.5)",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            zIndex: "1000",
+            zIndex: 1000,
+            p: 2, // Padding for smaller screens
           }}
         >
           <NViewUserProfile
             closeViewProfile={() => setIsNViewUserProfileOpen(false)}
           />
-        </div>
+        </Box>
       )}
 
       {/* Search Window */}
       {isSearchWindowOpen && (
-        <div
-          style={{
+        <Box
+          sx={{
             position: "fixed",
-            top: "0",
-            left: "0",
+            top: 0,
+            left: 0,
             width: "100%",
             height: "100%",
             backgroundColor: "rgba(0, 0, 0, 0.5)",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            zIndex: "1000",
+            zIndex: 1000,
+            p: 2, // Padding for smaller screens
           }}
         >
-          <SearchWindow
-            closeSearchWindow={() => setIsSearchWindowOpen(false)}
-          />
-        </div>
+          <SearchWindow closeSearchWindow={() => setIsSearchWindowOpen(false)} />
+        </Box>
       )}
     </Box>
   );

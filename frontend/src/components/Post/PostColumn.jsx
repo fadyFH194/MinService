@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Post from './Post';
 import PostForm from './PostForm';
 import { Box } from '@mui/material';
-import { useApi } from '../../contexts/ApiProvider'; // Adjust the import path accordingly
+import { useApi } from '../../contexts/ApiProvider';
 
 const PostColumn = () => {
   const [posts, setPosts] = useState([]);
@@ -39,7 +39,17 @@ const PostColumn = () => {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <Box
+      sx={{
+        width: { xs: '95%', sm: '90%', md: '80%', lg: '70%' },
+        mx: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 2,
+        p: 2,
+      }}
+    >
       <PostForm onAddPost={addNewPost} />
       {posts.map((post) => (
         <Post

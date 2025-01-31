@@ -97,7 +97,7 @@ def test_get_nuser_data(client, test_user):
         assert data["telegram"] == "@test_user"
         assert data["whatsapp"] == "+123456789"
         assert data["phone"] == "555-555-5555"
-        assert data["credits"] == 5  # Initial credits for a new user
+        assert data["credits"] == 0  # Initial credits for a new user
 
 
 def test_create_or_update_nuser_put(client, test_user):

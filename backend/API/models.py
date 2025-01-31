@@ -60,7 +60,7 @@ def create_user_credits(mapper, connection, target):
     logger.info(f"Creating UserCredits for new user with ID {target.id}")
     # Correctly pass parameters as a dictionary
     connection.execute(
-        UserCredits.__table__.insert(), {"nuser_id": target.id, "credits": 5}
+        UserCredits.__table__.insert(), {"nuser_id": target.id, "credits": 0}
     )
 
 

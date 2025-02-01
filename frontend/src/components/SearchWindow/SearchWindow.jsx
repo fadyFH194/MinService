@@ -14,16 +14,19 @@ import {
   Grid,
   Button,
   Chip,
-  Link, // Import Link component from MUI
-  SvgIcon, // Import SvgIcon for custom icons
+  Link,
+  SvgIcon,
+  Badge
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import StarIcon from "@mui/icons-material/Star";
 import { styled } from "@mui/material/styles";
 import { useApi } from "../../contexts/ApiProvider";
-import Post from "../Post/Post"; // Import Post component
+import Post from "../Post/Post";
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
-import PhoneIcon from '@mui/icons-material/Phone'; // Import Phone icon
+import PhoneIcon from '@mui/icons-material/Phone';
+
 
 // Custom Telegram Icon
 const TelegramIcon = (props) => (
@@ -85,19 +88,46 @@ function SearchWindow({ closeSearchWindow }) {
   const [selectedUser, setSelectedUser] = useState(null);
   const [userPosts, setUserPosts] = useState([]); // State for selected user's posts
   const [availableTags, setAvailableTags] = useState([]); // State for available tags
+  const [userData, setUserData] = useState(null); // For the selected user profile data
   const api = useApi();
+  const [kudosGiven, setKudosGiven] = useState(false); // Track if kudos have been given
+
+  // Updated handleGiveKudos: fetch full profile with credits from backend
+  const handleGiveKudos = async () => {
+    const recipientId = userData?.id;
+    if (!recipientId) {
+      alert("Recipient ID is missing.");
+      return;
+    }
+    
+    try {
+      const response = await api.post(`/give-kudos/${recipientId}`);
+      if (response.ok && response.status === 200) {
+        setUserData((prev) => ({
+          ...prev,
+          credits: response.body.new_credits,
+        }));
+        setKudosGiven(true);
+      } else {
+        alert(response.body?.error || "Failed to give kudos.");
+      }
+    } catch (error) {
+      console.error("Error giving kudos:", error);
+    }
+  };
+  
 
   // Helper function to generate contact link URLs
   const getContactLink = (label, value) => {
     switch (label) {
-      case "Telegram":
-        // eslint-disable-next-line no-case-declarations
+      case "Telegram": {
         const telegramUsername = value.startsWith("@") ? value.slice(1) : value;
         return `https://t.me/${telegramUsername}`;
-      case "WhatsApp":
-        // eslint-disable-next-line no-case-declarations
+      }
+      case "WhatsApp": {
         const whatsappNumber = value.replace(/\D/g, "");
         return `https://wa.me/${whatsappNumber}`;
+      }
       case "Phone":
         return `tel:${value}`;
       default:
@@ -199,6 +229,10 @@ function SearchWindow({ closeSearchWindow }) {
   // Function to handle user selection
   const handleUserSelect = async (user) => {
     setSelectedUser(user);
+    // For non-current users, simply use the search result as the profile
+    setUserData(user);
+    
+    // Optionally, if you want to fetch posts for the selected user:
     try {
       const response = await api.get("/posts");
       if (response && response.ok && response.status === 200) {
@@ -213,19 +247,20 @@ function SearchWindow({ closeSearchWindow }) {
       console.error("Error fetching posts:", error);
     }
   };
+  
 
-  // Render the selected user's profile with contact info (with icons)
+  // Render the selected user's profile with contact info (with icons) and kudos display
   const renderUserProfile = (user) => {
     const contactInfo = [
       { label: "Telegram", value: user.telegram },
       { label: "WhatsApp", value: user.whatsapp },
       { label: "Phone", value: user.phone },
     ];
-
+  
     const contactInfoFields = contactInfo.filter(
       (info) => info.value && info.value !== "N/A"
     );
-
+  
     return (
       <Grid
         container
@@ -241,7 +276,7 @@ function SearchWindow({ closeSearchWindow }) {
           elevation={3}
           sx={{
             p: { xs: 2, sm: 3 },
-            maxWidth: 600,
+            maxWidth: { xs: "90%", sm: 600 },
             width: "100%",
             position: "relative",
           }}
@@ -253,17 +288,43 @@ function SearchWindow({ closeSearchWindow }) {
           >
             <CloseIcon />
           </IconButton>
-          {/* User Avatar */}
+  
+          {/* Profile Header with Avatar and Kudos Badge */}
           <Grid container justifyContent="center" sx={{ mb: 2 }}>
-            <Avatar
-              src={user.picture}
-              alt={user.name}
-              sx={{ width: { xs: 80, sm: 100 }, height: { xs: 80, sm: 100 } }}
-            />
+            <Badge
+              badgeContent={
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.5,
+                    bgcolor: "#e0e0e0", // grey background
+                    borderRadius: "4px",
+                    px: 0.5,
+                  }}
+                >
+                  <StarIcon sx={{ fontSize: 16, color: "gold" }} />
+                  {user.credits}
+                </Box>
+              }
+              anchorOrigin={{ vertical: "top", horizontal: "right" }}
+              overlap="circular"
+              sx={{
+                "& .MuiBadge-badge": {
+                  backgroundColor: "transparent",
+                  color: "black",
+                  border: "none",
+                },
+              }}
+            >
+              <Avatar
+                src={user.picture}
+                alt={user.name}
+                sx={{ width: { xs: 80, sm: 100 }, height: { xs: 80, sm: 100 } }}
+              />
+            </Badge>
           </Grid>
-          <Typography variant="h4" sx={{ mb: 2, textAlign: "center" }}>
-            {user.name || "N/A"}
-          </Typography>
+  
           <Divider sx={{ mb: 2 }} />
           <List>
             <ListItem>
@@ -276,16 +337,10 @@ function SearchWindow({ closeSearchWindow }) {
               <ListItemText primary="About" secondary={user.about || "N/A"} />
             </ListItem>
             <ListItem>
-              <ListItemText
-                primary="Class Batch"
-                secondary={user.classBatch || "N/A"}
-              />
+              <ListItemText primary="Class Batch" secondary={user.classBatch || "N/A"} />
             </ListItem>
             <ListItem>
-              <ListItemText
-                primary="Current Location"
-                secondary={user.currentLocation || "N/A"}
-              />
+              <ListItemText primary="Current Location" secondary={user.currentLocation || "N/A"} />
             </ListItem>
             <ListItem>
               <ListItemText
@@ -298,10 +353,11 @@ function SearchWindow({ closeSearchWindow }) {
               />
             </ListItem>
           </List>
+  
           {/* Contact Info with Icons */}
           {contactInfoFields.length > 0 && (
             <>
-              <Typography variant="h6" sx={{ mt: 3 }}>
+              <Typography variant="h6" sx={{ mt: 2 }}>
                 Contact Info
               </Typography>
               <Divider sx={{ mb: 2 }} />
@@ -318,7 +374,11 @@ function SearchWindow({ closeSearchWindow }) {
                           <Link
                             href={getContactLink(info.label, info.value)}
                             target={info.label !== "Phone" ? "_blank" : "_self"}
-                            rel={info.label !== "Phone" ? "noopener noreferrer" : undefined}
+                            rel={
+                              info.label !== "Phone"
+                                ? "noopener noreferrer"
+                                : undefined
+                            }
                             underline="hover"
                           >
                             {info.value}
@@ -333,17 +393,32 @@ function SearchWindow({ closeSearchWindow }) {
               </List>
             </>
           )}
+  
+          {/* Kudos Button */}
+          <Grid container justifyContent="center" sx={{ mt: 2 }}>
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={handleGiveKudos}
+              disabled={kudosGiven}
+              sx={{ borderRadius: "50px", textTransform: "none", fontSize: "16px" }}
+            >
+              Give Kudos
+            </Button>
+          </Grid>
+  
           {/* Back Button */}
           <Grid container justifyContent="flex-end" sx={{ mt: 2 }}>
             <Button variant="contained" onClick={() => setSelectedUser(null)} sx={{ mr: 2 }}>
               Back
             </Button>
           </Grid>
+  
           {/* User's Posts */}
           {userPosts && userPosts.length > 0 && (
             <>
-              <Typography variant="h6" sx={{ mt: 3 }}>
-                Posts
+              <Typography variant="h6" sx={{ mt: 2 }}>
+                Your Posts
               </Typography>
               <Divider sx={{ mb: 2 }} />
               <Grid container direction="column" alignItems="center">
@@ -362,7 +437,7 @@ function SearchWindow({ closeSearchWindow }) {
       </Grid>
     );
   };
-
+  
   return (
     <Box
       sx={{

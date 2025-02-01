@@ -1,9 +1,9 @@
-from flask import Blueprint, jsonify, request, current_app
+from flask import Blueprint, jsonify, request, current_app, session
 from flask_login import login_required, current_user
 from flask_cors import CORS
 from sqlalchemy.exc import SQLAlchemyError
 
-from ..models import db, NUsers, UserSkills
+from ..models import db, NUsers, UserSkills, UserCredits
 
 userdata_bp = Blueprint("userdata_bp", __name__)
 CORS(userdata_bp, supports_credentials=True)
@@ -145,6 +145,7 @@ def search_users():
                 "whatsapp": user.whatsapp,
                 "phone": user.phone,
                 "skills": [skill.skill for skill in user.skills],
+                "credits": user.user_credits.credits if user.user_credits else 0,
             }
             for user in users
         ]
@@ -152,3 +153,45 @@ def search_users():
     except Exception as e:
         current_app.logger.error(f"Error searching users: {e}")
         return jsonify({"error": "Internal server error"}), 500
+    
+
+@userdata_bp.route("/give-kudos/<string:user_id>", methods=["POST"])
+@login_required
+def give_kudos(user_id):
+    # Prevent users from giving kudos to themselves
+    if current_user.id == user_id:
+        return jsonify({"error": "You cannot give kudos to yourself"}), 400
+
+    # Use the session to track which users current_user has already given kudos to
+    kudos_given = session.get("kudos_given", {})  # This should be a dict mapping target user IDs to True
+    if kudos_given.get(user_id):
+        return jsonify({"error": "You have already given kudos to this user"}), 400
+
+    try:
+        # Retrieve the target user
+        recipient = NUsers.query.filter_by(id=user_id).first()
+        if not recipient:
+            return jsonify({"error": "User not found"}), 404
+
+        # If the recipient does not have a credits record (should normally be auto-created), create one
+        if not recipient.user_credits:
+            recipient.user_credits = UserCredits(nuser_id=user_id, credits=0)
+            db.session.add(recipient.user_credits)
+
+        # Increment the recipient's credits
+        recipient.user_credits.credits += 1
+        db.session.commit()
+
+        # Record in the session that the current user has given kudos to this recipient
+        kudos_given[user_id] = True
+        session["kudos_given"] = kudos_given
+
+        return jsonify({
+            "success": "Kudos given successfully",
+            "new_credits": recipient.user_credits.credits
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error giving kudos: {e}", exc_info=True)
+        return jsonify({"error": "Database error"}), 500

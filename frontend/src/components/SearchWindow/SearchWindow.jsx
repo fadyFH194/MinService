@@ -418,7 +418,7 @@ function SearchWindow({ closeSearchWindow }) {
           {userPosts && userPosts.length > 0 && (
             <>
               <Typography variant="h6" sx={{ mt: 2 }}>
-                Your Posts
+                Posts
               </Typography>
               <Divider sx={{ mb: 2 }} />
               <Grid container direction="column" alignItems="center">

@@ -112,6 +112,24 @@ def add_comment(post_id):
         db.session.add(new_comment)
         db.session.commit()
 
+        # Send email notification to the post owner if the commenter is not the post owner
+        post = Post.query.get(post_id)
+        if post and post.author_id != current_user.id and post.author.email:
+            try:
+                send_email(
+                    to_email=post.author.email,
+                    subject=f"New comment on your post '{post.title}'",
+                    message=(
+                        f"Hello {post.author.name},\n\n"
+                        f"{current_user.name} commented on your post '{post.title}':\n"
+                        f"\"{new_comment.content}\"\n\n"
+                        f"Check out the comment on MinService: https://minservice-94bfa.web.app/\n\n"
+                        f"Best regards,\nMinService"
+                    ),
+                )
+            except Exception as e:
+                app.logger.error(f"Failed to send email to {post.author.email}: {e}")
+
         return (
             jsonify(
                 {
@@ -120,9 +138,7 @@ def add_comment(post_id):
                     "content": new_comment.content,
                     "author": current_user.name,
                     "author_id": current_user.id,
-                    "author_picture": current_user.picture
-                    if current_user.picture
-                    else None,
+                    "author_picture": current_user.picture if current_user.picture else None,
                     "timestamp": new_comment.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
                 }
             ),

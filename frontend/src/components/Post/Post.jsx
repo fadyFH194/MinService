@@ -66,7 +66,9 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
 
   // For the "Profile Modal"
   const [profileOpen, setProfileOpen] = useState(false);
-  const [setProfileUserData] = useState(null);
+  // We remove the local userData state if we’re only passing name
+  // but we do preserve your original code structure:
+  const [/*profileUserData*/, setProfileUserData] = useState(null);
   const [profileAuthorName, setProfileAuthorName] = useState("");
 
   // -------------------- Fetch Post Data --------------------
@@ -124,8 +126,10 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
     setProfileOpen(false);
     setProfileUserData(null);
   };
+
+  // Our approach: we just store the author’s *name* so FullUserProfile can do /search/users?q=name
   const handleAvatarClick = (authorName) => {
-    setProfileAuthorName(authorName); // e.g. "Philip"
+    setProfileAuthorName(authorName);
     setProfileOpen(true);
   };
 
@@ -337,6 +341,7 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
                     alt="Author's Picture"
                     src={postData.author_picture}
                     sx={{ width: { xs: 30, sm: 40 }, height: { xs: 30, sm: 40 }, cursor: 'pointer' }}
+                    // Clicking the post's avatar uses handleAvatarClick
                     onClick={() => handleAvatarClick(postData.author)}
                   />
                 </Grid>
@@ -430,7 +435,6 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
           </Button>
 
           {comments.map((comment) => {
-            const commentAuthorData = buildAuthorData(comment);
             return (
               <Grid container alignItems="center" key={comment.id} sx={{ mt: { xs: '8px', sm: '16px' } }}>
                 <Grid item>
@@ -438,6 +442,7 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
                     alt="Comment Author's Picture"
                     src={comment.author_picture}
                     sx={{ width: { xs: 24, sm: 30 }, height: { xs: 24, sm: 30 }, cursor: 'pointer' }}
+                    // FIXED: Use handleAvatarClick for the comment's avatar too
                     onClick={() => handleAvatarClick(comment.author)}
                   />
                 </Grid>
@@ -445,7 +450,8 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
                   <Typography variant="body2">
                     <strong
                       style={{ cursor: 'pointer' }}
-                      onClick={() => openProfileForUser(commentAuthorData)}
+                      // Also use handleAvatarClick here, or keep openProfileForUser if you prefer the user object approach
+                      onClick={() => handleAvatarClick(comment.author)}
                     >
                       {comment.author}
                     </strong>
@@ -614,7 +620,7 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
         </Dialog>
       </Card>
 
-      {/* EXACT same usage as your snippet's "UserProfileModal" */}
+      {/* We pass the profileAuthorName to FullUserProfile so it can do /search/users?q=thatName */}
       <FullUserProfile
         open={profileOpen}
         authorName={profileAuthorName}

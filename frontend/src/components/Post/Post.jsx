@@ -438,7 +438,7 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
                     alt="Comment Author's Picture"
                     src={comment.author_picture}
                     sx={{ width: { xs: 24, sm: 30 }, height: { xs: 24, sm: 30 }, cursor: 'pointer' }}
-                    onClick={() => openProfileForUser(commentAuthorData)}
+                    onClick={() => handleAvatarClick(comment.author)}
                   />
                 </Grid>
                 <Grid item xs sx={{ ml: 1 }}>

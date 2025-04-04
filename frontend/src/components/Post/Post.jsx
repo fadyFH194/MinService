@@ -68,7 +68,7 @@ const Post = ({ postId, onDelete, refreshPosts }) => {
   const [profileOpen, setProfileOpen] = useState(false);
   // We remove the local userData state if we’re only passing name
   // but we do preserve your original code structure:
-  const [/*profileUserData*/, setProfileUserData] = useState(null);
+  const [profileUserData, setProfileUserData] = useState(null);
   const [profileAuthorName, setProfileAuthorName] = useState("");
 
   // -------------------- Fetch Post Data --------------------
